@@ -1,0 +1,8 @@
+Dispatch v1
+===========
+
+by Dave Gurnell (dave at untyped)
+
+This package is documented using Scribble.
+
+  http://www.untyped.com/
