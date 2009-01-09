@@ -7,7 +7,7 @@
 
 (define release-notes
   '((p "Changes:")
-    (ul (li "updated for PLT 4.1.3.x;"))))
+    (ul (li "changed required-core-version from 4.1.3 to 4.1.3.8."))))
 
 (define categories '(net devtools))
 
@@ -15,6 +15,6 @@
 
 (define scribblings '(("scribblings/dispatch.scrbl" ())))
 
-(define required-core-version "4.0")
+(define required-core-version "4..1.3.8")
 
 (define repositories '("4.x"))
