@@ -15,6 +15,6 @@
 
 (define scribblings '(("scribblings/dispatch.scrbl" ())))
 
-(define required-core-version "4..1.3.8")
+(define required-core-version "4.1.3.8")
 
 (define repositories '("4.x"))
