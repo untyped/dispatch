@@ -1,9 +1,11 @@
 #lang scheme/base
 
 (require (prefix-in net: net/url)
-         web-server/http/request-structs
-         web-server/http/response-structs
+         srfi/26
+         web-server/dispatchers/dispatch
+         web-server/http
          (planet untyped/unlib:3/pipeline)
+         "base.ss"
          "dispatch.ss"
          "test-base.ss")
 
@@ -16,7 +18,7 @@
 
 (define-site blog2
   ([(url "") index2])
-  #:rule-not-found (lambda (request) 123)
+  #:rule-not-found    (lambda (request) 123)
   #:other-controllers (handle-form2))
 
 (define (append-x continue request slug)
@@ -45,7 +47,7 @@
       (check-pred controller? handle-form2 "blog2"))
     
     (test-case "define-site: #:rule-not-found"
-      (check-pred response? (dispatch (test-request "/blah") blog) "blog")
+      (check-exn exn:dispatcher? (cut dispatch (test-request "/blah") blog) "blog")
       (check-equal? (dispatch (test-request "/blah") blog2) 123 "blog2"))
     
     (test-case "define-controller: repeat definition"
