@@ -3,8 +3,9 @@
 (require net/url
          scheme/contract
          scheme/match
-         srfi/13/string
-         srfi/26/cut
+         srfi/13
+         srfi/26
+         web-server/dispatchers/dispatch
          "base.ss"
          "pattern.ss"
          "response.ss"
@@ -71,7 +72,7 @@
 (define (create-undefined-body id)
   (make-undefined-body
    (lambda (request . args)
-     (make-undefined-response (debug "RQ" request) (debug "ID" id) (debug "ARGS" args)))))
+     (next-dispatcher))))
 
 ; Provide statements --------------------------- 
 

@@ -11,7 +11,7 @@
 
 (define categories '(net devtools))
 
-(define primary-file "dispatch.ss")
+(define primary-file "main.ss")
 
 (define scribblings '(("scribblings/dispatch.scrbl" ())))
 
