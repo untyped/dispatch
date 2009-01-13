@@ -7,7 +7,7 @@
 
 (define release-notes
   '((p "Changes:")
-    (ul (li "changed required-core-version from 4.1.3 to 4.1.3.8."))))
+    (ul (li "fixed static file bug (PLaneT Trac ticket #146)."))))
 
 (define categories '(net devtools))
 

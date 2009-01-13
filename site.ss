@@ -16,9 +16,7 @@
 ; symbol (listof symbol) -> site controller ...
 (define (create-site site-id controller-ids)
   (define site 
-    (make-site site-id null null
-               (lambda (request)
-                 (make-not-found-response request))))
+    (make-site site-id null null (lambda (request) (next-dispatcher))))
   (define controllers 
     (map (lambda (controller-id)
            (make-controller controller-id site null (create-undefined-body controller-id)))
@@ -72,7 +70,7 @@
 (define (create-undefined-body id)
   (make-undefined-body
    (lambda (request . args)
-     (next-dispatcher))))
+     (make-undefined-response (debug "RQ" request) (debug "ID" id) (debug "ARGS" args)))))
 
 ; Provide statements --------------------------- 
 
