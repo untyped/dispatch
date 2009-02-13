@@ -416,3 +416,7 @@ Returns the encoder procedure associated with @scheme[arg].}
 
 @defproc[(set-arg-encoder! [arg arg?] [proc (-> any string?)]) void?]{
 Sets the encoder procedure of @scheme[arg] to @scheme[proc].}
+
+@section{Acknowledgements}
+
+Many thanks to the following for their contributions: Jay McCarthy, Karsten Patzwaldt and Noel Welsh.

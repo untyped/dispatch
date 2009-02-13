@@ -7,7 +7,7 @@
 
 (define release-notes
   '((p "Changes:")
-    (ul (li "fixed static file bug (PLaneT Trac ticket #146)."))))
+    (ul (li "updated to PLT 4.1.4.3."))))
 
 (define categories '(net devtools))
 
@@ -15,6 +15,6 @@
 
 (define scribblings '(("scribblings/dispatch.scrbl" ())))
 
-(define required-core-version "4.1.3.8")
+(define required-core-version "4.1.4.3")
 
 (define repositories '("4.x"))

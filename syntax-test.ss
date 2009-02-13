@@ -35,7 +35,7 @@
 ; Helpers ----------------------------------------
 
 (define (test-request url)
-  (make-request 'get (net:string->url url) null null #f "1.2.3.4" 123 "4.3.2.1"))
+  (make-request #"get" (net:string->url url) null null #f "1.2.3.4" 123 "4.3.2.1"))
 
 ; Tests ------------------------------------------
 

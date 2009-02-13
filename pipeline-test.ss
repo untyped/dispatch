@@ -10,7 +10,7 @@
 
 ; request
 (define test-request
-  (make-request 'get (string->url "http://www.example.com") null null #f "1.2.3.4" 123 "4.3.2.1"))
+  (make-request #"get" (string->url "http://www.example.com") null null #f "1.2.3.4" 123 "4.3.2.1"))
 
 ; stage list list -> void
 (define (check-stage stage actual expected)
