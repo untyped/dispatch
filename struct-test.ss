@@ -1,13 +1,9 @@
 #lang scheme/base
 
+(require "test-base.ss")
+
 (require net/uri-codec
-         net/url
-         srfi/26/cut)
-
-(require "test-base.ss"
          "dispatch.ss")
-
-(provide struct-tests)
 
 ; Helpers ----------------------------------------
 
@@ -250,6 +246,8 @@
     
     (test-case "controller-url: no rule"
       (check-exn exn:fail:dispatch?
-        (cut controller-url delete-post)))
-    
-    ))
+        (cut controller-url delete-post)))))
+
+; Provide statements -----------------------------
+
+(provide struct-tests)

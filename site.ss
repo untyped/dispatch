@@ -1,12 +1,9 @@
 #lang scheme/base
 
-(require net/url
-         scheme/contract
-         scheme/match
-         srfi/13
-         srfi/26
+(require "base.ss")
+
+(require srfi/13
          web-server/dispatchers/dispatch
-         "base.ss"
          "pattern.ss"
          "response.ss"
          "struct-private.ss")

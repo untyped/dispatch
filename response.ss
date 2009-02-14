@@ -1,11 +1,10 @@
 #lang scheme/base
 
-(require net/url
-         scheme/contract
-         web-server/servlet
-         (planet untyped/mirrors:2)
-         (planet untyped/unlib:3/number)
-         "base.ss")
+(require "base.ss")
+
+(require web-server/servlet
+         (mirrors-in)
+         (unlib-in number))
 
 ; Procedures -------------------------------------
 

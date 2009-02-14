@@ -1,8 +1,8 @@
 #lang scheme/base
 
-(require (only-in net/url string->url)
-         web-server/http/request-structs
-         (planet untyped/unlib:3/pipeline)
+(require "base.ss")
+
+(require (unlib-in pipeline)
          "pipeline.ss"
          "test-base.ss")
 

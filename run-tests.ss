@@ -1,7 +1,8 @@
 #lang scheme/base
 
-(require "all-dispatch-tests.ss"
-         "test-base.ss")
+(require "test-base.ss")
+
+(require "all-dispatch-tests.ss")
 
 (print-hash-table #t)
 (print-struct #t)

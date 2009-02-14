@@ -1,7 +1,8 @@
 #lang scheme/base
 
-(require scheme/contract
-         (planet untyped/unlib:3/pipeline))
+(require "base.ss")
+
+(require (unlib-in pipeline))
 
 ; Structure types ------------------------------
 

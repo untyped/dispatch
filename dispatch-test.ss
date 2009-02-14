@@ -1,8 +1,8 @@
 #lang scheme/base
 
-(require (only-in net/url string->url)
-         srfi/26/cut
-         web-server/dispatchers/dispatch
+(require "base.ss")
+
+(require web-server/dispatchers/dispatch
          web-server/http/request-structs
          web-server/http/response-structs
          "test-base.ss"

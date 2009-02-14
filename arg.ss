@@ -1,9 +1,8 @@
 #lang scheme/base
 
-(require scheme/contract
-         net/uri-codec)
+(require "base.ss")
 
-(require "base.ss"
+(require net/uri-codec
          "struct-private.ss")
 
 ; -> arg
@@ -90,4 +89,3 @@
  [string-arg  (-> arg?)]
  [symbol-arg  (-> arg?)]
  [rest-arg    (-> arg?)])
-

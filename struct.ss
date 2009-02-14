@@ -1,8 +1,8 @@
 #lang scheme/base
 
-(require scheme/contract
-         (planet untyped/unlib:3/pipeline)
-         "base.ss"
+(require "base.ss")
+
+(require (unlib-in pipeline)
          "arg.ss"
          "pattern.ss"
          "site.ss"

@@ -1,9 +1,8 @@
 #lang scheme/base
 
-(require scheme/contract
-         scheme/match
-         web-server/http/request-structs
-         (planet untyped/unlib:3/pipeline))
+(require "base.ss")
+
+(require (unlib-in pipeline))
 
 ; Procedures -------------------------------------
 

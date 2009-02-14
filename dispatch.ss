@@ -1,10 +1,8 @@
 #lang scheme/base
 
-(require net/url
-         scheme/contract
-         srfi/13
-         web-server/http/request-structs
-         "base.ss"
+(require "base.ss")
+
+(require srfi/13
          "response.ss"
          "struct.ss"
          "syntax.ss")
