@@ -17,7 +17,7 @@
     (clean-url (request-uri request)))
   (define-values (controller match)
     (site-controller/url site url))
-  (log-info* "Dispatching" (url->string url))
+  ;(log-info* "Dispatching" (url->string url))
   (if controller
       (apply controller request match)
       ((site-rule-not-found site) request)))
