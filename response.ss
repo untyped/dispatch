@@ -3,7 +3,7 @@
 (require net/url
          scheme/contract
          web-server/servlet
-         (planet untyped/mirrors:1/mirrors)
+         (planet untyped/mirrors:1)
          (planet untyped/unlib:3/number)
          "base.ss")
 
@@ -67,5 +67,5 @@ ENDCSS
 ; Provide statements -----------------------------
 
 (provide/contract
- [make-undefined-response (-> request? symbol? list? response?)]
- [make-not-found-response (-> request? response?)])
+ [make-undefined-response (-> request? symbol? list? response/full?)]
+ [make-not-found-response (-> request? response/full?)])

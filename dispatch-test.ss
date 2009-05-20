@@ -1,9 +1,9 @@
 #lang scheme/base
 
 (require (only-in net/url string->url)
-         srfi/26/cut
-         web-server/http/request-structs
-         web-server/http/response-structs
+         srfi/26
+         web-server/http
+         (planet untyped/mirrors:1/plain/util)
          "test-base.ss"
          "dispatch.ss")
 
@@ -38,11 +38,8 @@
       (check-url "http://www.example.com/new/123#anchor" (list "create-post" 123))
       (check-url "http://www.example.com/new/123/#anchor" (list "create-post" 123))
       (check-url "http://www.example.com/new/123?a=banchor" (list "create-post" 123))
-      (check-url "http://www.example.com/new/123/?a=b" (list "create-post" 123)))
-    
-    (test-pred "dispatch: rule not found"
-      response?
-      (dispatch (test-request "http://www.example.com/new/123/abc") blog))))
+      (check-url "http://www.example.com/new/123/?a=b" (list "create-post" 123))
+      (check-url "http://www.example.com/new/123/abc" (list "not-found" "/new/123/abc")))))
 
 ; Provide statements -----------------------------
 
