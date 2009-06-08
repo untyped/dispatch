@@ -1,9 +1,8 @@
 #lang scheme/base
 
-(require scheme/contract
-         srfi/26/cut
-         syntax/boundmap
-         "base.ss")
+(require "base.ss")
+
+(require syntax/boundmap)
 
 (define info-cache (make-module-identifier-mapping))
 

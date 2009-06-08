@@ -1,19 +1,18 @@
 #lang scheme/base
 
-(require net/url
-         scheme/contract
-         web-server/servlet
-         (planet untyped/mirrors:1)
-         (planet untyped/unlib:3/number)
-         "base.ss")
+(require "base.ss")
+
+(require web-server/servlet
+         (mirrors-in)
+         (unlib-in number))
 
 ; Procedures -------------------------------------
 
-; request symbol (listof any) -> response
+; request symbol (listof any) -> response/full
 (define (make-undefined-response request controller-id controller-args)
   (make-html-response
    #:code    500
-   #:message "Internal error"
+   #:message #"Internal error"
    (xml (html (head (title "Controller not defined")
                     ,stylesheet)
               (body (div (@ [id "container"])
@@ -31,11 +30,11 @@
                          (p "If you have written a definition for this controller, make sure it is "
                             "directly or indirectly required by the main module that runs your application.")))))))
 
-; request -> response
+; request -> response/full
 (define (make-not-found-response request)
   (make-html-response
    #:code    404
-   #:message "Not found"
+   #:message #"Not found"
    #:seconds (current-seconds)
    (xml (html (head (title "404 not found")
                     ,stylesheet)

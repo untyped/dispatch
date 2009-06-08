@@ -1,11 +1,9 @@
 #lang scheme/base
 
-(require (prefix-in net: net/url)
-         srfi/26
-         web-server/dispatchers/dispatch
-         web-server/http
-         (planet untyped/unlib:3/pipeline)
-         "base.ss"
+(require "base.ss")
+
+(require web-server/dispatchers/dispatch
+         (unlib-in pipeline)
          "dispatch.ss"
          "test-base.ss")
 
@@ -31,11 +29,6 @@
   (list append-x)
   (lambda (request slug)
     (list "review-post" request slug)))
-
-; Helpers ----------------------------------------
-
-(define (test-request url)
-  (make-request 'get (net:string->url url) null null #f "1.2.3.4" 123 "4.3.2.1"))
 
 ; Tests ------------------------------------------
 

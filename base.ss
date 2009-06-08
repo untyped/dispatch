@@ -1,12 +1,18 @@
 #lang scheme/base
 
+(require (planet untyped/unlib:3/require))
+
+(define-library-aliases mirrors    (planet untyped/mirrors:2)       #:provide)
+(define-library-aliases unlib      (planet untyped/unlib:3)         #:provide)
+(define-library-aliases schemeunit (planet schematics/schemeunit:3) #:provide)
+
 (require net/url
          scheme/contract
+         scheme/match
          scheme/pretty
-         (planet untyped/unlib:3/debug)
-         (planet untyped/unlib:3/exn)
-         (planet untyped/unlib:3/log)
-         (planet untyped/unlib:3/url))
+         srfi/26
+         web-server/http
+         (unlib-in debug exn log url))
 
 ; Exception types ------------------------------
 
@@ -26,10 +32,13 @@
 
 ; Provide statements --------------------------- 
 
-(provide (all-from-out scheme/pretty
-                       (planet untyped/unlib:3/debug)
-                       (planet untyped/unlib:3/exn)
-                       (planet untyped/unlib:3/log))
+(provide (all-from-out net/url
+                       scheme/contract
+                       scheme/match
+                       scheme/pretty
+                       srfi/26
+                       web-server/http)
+         (unlib-out debug exn log url)
          (struct-out exn:dispatch)
          (struct-out exn:fail:dispatch))
 

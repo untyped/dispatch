@@ -1,15 +1,12 @@
 #lang scheme/base
 
+(require "base.ss")
+
 (require (for-syntax scheme/base
-                     scheme/match
-                     scheme/pretty
                      scheme/provide-transform
-                     srfi/26/cut
-                     (planet untyped/unlib:3/syntax)
+                     (unlib-in syntax)
                      "base.ss"
                      "site-info.ss")
-         scheme/pretty
-         "base.ss"
          "site-info.ss"
          "struct.ss")
 

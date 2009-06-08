@@ -1,12 +1,11 @@
 #lang scheme/base
 
-(require "test-base.ss"
-         "dispatch-test.ss"
+(require "test-base.ss")
+
+(require "dispatch-test.ss"
          "pipeline-test.ss"
          "struct-test.ss"
          "syntax-test.ss")
-
-(provide all-dispatch-tests)
 
 (define all-dispatch-tests
   (test-suite "dispatch"
@@ -14,3 +13,7 @@
     dispatch-tests
     syntax-tests
     pipeline-tests))
+
+; Provide statements -----------------------------
+
+(provide all-dispatch-tests)

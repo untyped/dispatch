@@ -1,9 +1,9 @@
 #lang scheme/base
 
+(require "base.ss")
+
 (require net/uri-codec
-         scheme/contract
-         (planet untyped/unlib:3/symbol)
-         "base.ss"
+         (unlib-in symbol)
          "struct-private.ss")
 
 ; Constructors ---------------------------------

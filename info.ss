@@ -6,8 +6,9 @@
   '((p "A tool for configuring controller procedures in web applications.")))
 
 (define release-notes
-  '((p "Changes:")
-    (ul (li "fixed static file bug (PLaneT Trac ticket #146)."))))
+  '((p "Changes and additions:")
+    (ul (li "added the " (tt "serve/dispatch") " procedure;")
+        (li "updated the quick start in the docs."))))
 
 (define categories '(net devtools))
 
@@ -15,6 +16,6 @@
 
 (define scribblings '(("scribblings/dispatch.scrbl" ())))
 
-(define required-core-version "4.1.3.8")
+(define required-core-version "4.1.4.1")
 
 (define repositories '("4.x"))

@@ -3,7 +3,7 @@
 @(require scribble/eval
           scribble/manual
           (for-label scheme/base
-                     (file "../dispatch.ss")))
+                     "../dispatch.ss"))
 
 @title{@bold{Dispatch}: Binding URLs to Procedures}
 
@@ -35,15 +35,15 @@ Dispatch makes it very easy to create this kind of configuration using code like
      [(url "/archive/" (integer-arg) "/" (integer-arg))
       review-archive]))
   
-  (code:comment "(request -> response)")  
+  (code:comment "request -> response")  
   (define-controller (list-posts request)
     ...)
   
-  (code:comment "(request string -> response)")  
+  (code:comment "request string -> response")  
   (define-controller (review-post request slug)
     ...)
     
-  (code:comment "(request integer integer -> response)")  
+  (code:comment "request integer integer -> response")  
   (define-controller (review-archive year request month)
     ...)]
 
@@ -72,39 +72,34 @@ The first step is to create a @italic{site} definition using @scheme[define-site
 
 @schememod[scheme/base
 
-  (require (planet untyped/dispatch/dispatch))
-  
-  (provide blog index review-post review-archive)
+  (require (planet untyped/dispatch))
   
   (define-site blog
     ([(url "/") index]
      [(url "/posts/" (string-arg)) review-post]
      [(url "/archive/" (integer-arg) "/" (integer-arg))
-      review-archive]))]
+      review-archive]))
+      
+  (provide (site-out blog))]
 
-Now that the site has been defined we just need a servlet to create a working web application. We will simplify the creation of our servlet by using the Instaservlet package. Create a file called @scheme{blog/run.ss}, edit it and type in the following:
+Now that the site has been defined we just need a servlet to create a working web application. We will simplify the creation of our servlet by using the @scheme[serve/dispatch] procedure. Create a file called @scheme{blog/run.ss}, edit it and type in the following:
 
 @schememod[scheme/base
 
-  (require (planet untyped/instaservlet/instaservlet)
-           (planet untyped/dispatch/dispatch)
-           (file "site.ss"))
+  (require (planet untyped/dispatch)
+           "site.ss")
 
-  (code:comment "(request -> response)") 
-  (define (main request)
-    (dispatch request blog))
+  (serve/dispatch site)]
 
-  (go! main)]
-
-The @scheme[go!] procedure starts a web server and populates it with a single servlet that calls @scheme[main] whenever it receives an HTTP request. @scheme[main] uses the Dispatch procedure @scheme[dispatch] to send the request to the relevant controller.
+@scheme[serve/dispatch] starts a web server and populates it with a single servlet that dispatches to @scheme[site] whenever it receives an HTTP request.
 
 We should now be able to test the site. On the command line type:
 
 @commandline{mzscheme run.ss}
 
-and go to @scheme{http://localhost:8765/} in your web browser. You should see an error page saying something like ``@italic{Controller not defined}''. Also try @scheme{http://localhost:8765/posts/hello-world} and @scheme{http://localhost:8765/archive/2008/02}.
+and go to @scheme{http://localhost:8000/} in your web browser. You should see an error page saying something like ``@italic{Controller not defined}''. Also try @scheme{http://localhost:8000/posts/hello-world} and @scheme{http://localhost:8000/archive/2008/02}.
 
-Dispatch provides a default 404 handler that it uses when it cannot find a matching rule. Test this by going to @scheme{http://localhost:8765/foo} in your browser.
+@scheme[serve/dispatch] provides a default 404 handler that it uses when it cannot find a matching rule. Test this by going to @scheme{http://localhost:8000/foo} in your browser.
 
 @subsection{Define some controllers}
 
@@ -112,10 +107,10 @@ The @italic{Controller not defined} error pages above are appearing because ther
 
 @schememod[scheme/base
 
-  (require (planet untyped/dispatch/dispatch)
-           (file "../site.ss"))
+  (require (planet untyped/dispatch)
+           "../site.ss")
   
-  (code:comment "(request string -> html-response)") 
+  (code:comment "request string -> html-response") 
   (define-controller (review-post request slug)
     `(html (head (title ,slug))
            (body (h1 "You are viewing " ,(format "~s" slug))
@@ -124,19 +119,18 @@ The @italic{Controller not defined} error pages above are appearing because ther
 We need to make sure @scheme{posts.ss} gets executed so that this definition gets loaded into @scheme[blog]. To do this, add an extra clause to the @scheme[require] statement in @scheme{run.ss} so that it reads:
 
 @schemeblock[
-  (require (planet untyped/instaservlet/instaservlet)
-           (planet untyped/dispatch/dispatch)
-           (file "site.ss")
-           (file "controllers/posts.ss"))]
+  (require (planet untyped/dispatch)
+           "site.ss"
+           "controllers/posts.ss")]
 
-Now re-run the application and go to @scheme{http://localhost:8765/posts/hello-world} in your browser. You should see the web page we just created.
+Now re-run the application and go to @scheme{http://localhost:8000/posts/hello-world} in your browser. You should see the web page we just created.
 
 @subsection{Insert links from one controller to another}
 
-Now we are able to write controllers and dispatch to them, we need to know how to create links from one controller to another. Dispatch lets us do this without having to remember the URL structure of the site. Return to @scheme{blog/controllers/posts.ss} and add the following code for the @scheme[index] controller:
+Now that we are able to write controllers and dispatch to them, we need to know how to create links from one controller to another. Dispatch lets us do this without having to remember the URL structure of the site. Return to @scheme{blog/controllers/posts.ss} and add the following code for the @scheme[index] controller:
 
 @schemeblock[
-  (code:comment "(request -> html-response)") 
+  (code:comment "request -> html-response") 
   (define-controller (index request)
     `(html (head (title "Index"))
            (body (h1 "Index")
@@ -145,21 +139,21 @@ Now we are able to write controllers and dispatch to them, we need to know how t
                                   "post2"
                                   "post3"))))))
 
-  (code:comment "(string -> html)")  
+  (code:comment "string -> html")  
   (define (index-item-html slug)
     `(li (a ([href ,(controller-url review-post slug)])
             "View " ,(format "~s" slug))))]
 
-In this code, the @scheme[index] controller is generating a list of posts using a helper procedure called @scheme[index-item-html]. @scheme[index-item-html] is using a Dispatch API procedure called @scheme[controller-url] to create URLs that point to @scheme[review-post]. @scheme[controller-url] takes as its arguments the controller to link to and the values of any URL pattern arguments: note that there is no @italic{request} argument.
+In this code, the @scheme[index] controller is generating a list of posts using a helper procedure called @scheme[index-item-html]. @scheme[index-item-html] is using a procedure from Dispatch called @scheme[controller-url] to create URLs that point to @scheme[review-post]. @scheme[controller-url] takes as its arguments the controller to link to and the values of any URL pattern arguments: note that there is no @italic{request} argument.
 
-Note that @scheme[review-post] is being provided from the @scheme[define-site] statement @scheme{site.ss}, not from the @scheme[define-controller] statement in the local module. We can easily move @scheme[index-item-html] out into a separate module of view code without creating a cyclic module dependency. For the moment, however, we just need to see the code working. Re-run the application and go to @scheme{http://localhost:8765/} in your browser.
+Note that @scheme[review-post] is being provided from the @scheme[define-site] statement @scheme{site.ss}, not from the @scheme[define-controller] statement in the local module. We can easily move @scheme[index-item-html] out into a separate module of view code without creating a cyclic module dependency. For the moment, however, we just need to see the code working. Re-run the application and go to @scheme{http://localhost:8000/} in your browser.
 
 You should see a list of three links. Inspect the HTML source of the page and notice that the links point to URLs like @scheme{/posts/post1}. These are not continuation links - they are permanent, memorable, bookmarkable links to the posts. What is more, these URLs are generated from the URL patterns in the definition of @scheme[blog] in @scheme{site.ss}: we can change these patterns in this one place and generated URLs will change accordingly throughout the site.
 
 Note that we can still use continuations to call @scheme[review-post]. Simply wrap a normal procedure call in a @scheme[lambda] statement as normal:
 
 @schemeblock[
-  (code:comment "(string -> html)")  
+  (code:comment "string -> html")  
   (define (index-item-html slug)
     `(li (a ([href ,(lambda (request) 
                       (review-post request slug))])
@@ -169,20 +163,17 @@ The URLs generated by this approach will expire after a finite time, but in exch
 
 @subsection{Define a custom 404 handler}
 
-It is worth noting that we can replace Dispatch's default 404 Not Found handler with our own code by providing a final rule in the site that matches  any URL:
+It is worth noting that we can replace Dispatch's default 404 Not Found handler with our own code by passing an extra keyword argument to @scheme[serve/dispatch]:
 
 @schemeblock[
-  (define-site
-    ([(url "") index]
-     (code:comment "... other rules ...")
-     [(url (rest-arg)) not-found]))]
+  (serve/dispatch
+   site
+   #:file-not-found-responder
+   (lambda (request)
+     '(html (head (title "404"))
+            (body (p "Oops! We could not find what you were looking for.")))))]
 
-The corresponding controller should take one pattern argument to match the @scheme[rest-arg]. This argument is conveniently bound to the missing URL:
-
-@schemeblock[
-  (code:comment "(request string -> response)") 
-  (define-controller (not-found request missing-url)
-    (code:comment "..."))]
+Note that, unlike in Dispatch 1.x, we cannot achieve the same result using a catch-all "not found" rule at the end of the site. This is because @scheme[serve/dispatch] looks for static files such as CSS files and images @italic{after} it scans the rules in the site. Placing a 404 rule in the site would prevent th web server serving these static files.
 
 @subsection{Next steps...}
 
@@ -197,7 +188,7 @@ The quick start has demonstrated how to get up and running with @italic{Dispatch
 
 The API for Dispatch is made available by requiring a single file, @scheme{dispatch.ss}:
 
-@defmodule[(planet untyped/dispatch/dispatch)]
+@defmodule[(planet untyped/dispatch)]
 
 The following sections document the forms and procedures provided.
 
@@ -218,11 +209,6 @@ Currently only one type of condition is supported: the @scheme[url] form creates
 The optional @scheme[#:other-controllers] argument can be used to specify controllers that are not bound to any URL. These controllers may be called like normal procedures (including by continuation) but cannot be used with @scheme[controller-url].}
 
 The optional @scheme[#:rule-not-found] argument can be used to specify a procedure to call when no matching controller is found. This is useful if you want to override the default 404 page without defining a special controller.
-                                         
-@defform[(define/provide-site id (rule ...) site-option ...)]{
-@bold{Deprecated:} This form will be removed in the next backwards-incompatible release.
-                                                              
-Similar to @scheme[define-site] except that @scheme[provide] statements are added for the site and all its controllers.}
 
 @defform[(site-out site)]{
 Provide form that provides @scheme[site] and its associated controllers.}
@@ -301,11 +287,52 @@ If you are writing a servlet directly you should call @scheme[dispatch] directly
   (define (start initial-request)
     (dispatch initial-request my-site))]
 
-If you are using Instaservlet you should call to @scheme[dispatch] from the procedure you pass to @scheme[go!]:
+If you are using the @scheme[web-server/servlet-env] module you should call to @scheme[dispatch] from the procedure you pass to @scheme[serve/servlet]:
 
 @schemeblock[
-  (go! (lambda (initial-request)
-         (dispatch initial-request my-site)))]}
+  (serve/servlet (lambda (initial-request)
+                   (dispatch initial-request my-site)))]}
+
+@defproc[(serve/servlet
+          [site+start                  (or/c site? (-> request? response/c))]
+          [#:command-line?             command-line?     boolean?          #f]
+          [#:launch-browser?           launch-browser?   boolean?          (not command-line?)]
+          [#:quit?                     quit?             boolean?          (not command-line?)]
+          [#:banner?                   banner?           boolean?          (not command-line?)]
+          [#:listen-ip                 listen-ip         (or/c string? #f) "127.0.0.1"]
+          [#:port                      port              number?           8000]
+          [#:ssl?                      ssl?              boolean?          #f]
+          [#:servlet-path              servlet-path      string?           "/"]
+          [#:servlet-regexp            servlet-regexp    regexp?           #rx""]
+          [#:stateless?                stateless?        boolean?          #f]
+          [#:stuffer                   stuffer           (stuffer/c serializable? bytes?)
+                                                         default-stuffer]
+          [#:manager                   manager           manager?
+                                                         (make-threshold-LRU-manager #f (* 1024 1024 64))]
+          [#:servlet-namespace         servlet-namespace (listof module-path?)
+                                                         empty]
+          [#:server-root-path          server-root-path  path-string?
+                                                         default-server-root-path]
+          [#:extra-files-paths         extra-files-paths (listof path-string?)
+                                                         (list (build-path server-root-path "htdocs"))]
+          [#:servlets-root             servlets-root     path-string? (build-path server-root-path "htdocs")]
+          [#:servlet-current-directory servlet-current-directory
+                                       path-string?
+                                       servlets-root]
+          [#:file-not-found-responder  file-not-found-responder
+                                       (-> request? response/c)
+                                       dispatch-not-found-responder]
+          [#:mime-types-path           mime-types-path   path-string?           ...]
+          [#:log-file                  log-file          (or/c path-string? #f) #f]
+          [#:log-format                log-format        log-format/c           'apache-default])
+         void]{
+A wrapper for the Web Server's @scheme[serve/servlet]. Quickly configures default server instance. Most arguments are the same as those for @scheme[serve/servlet], with three notable exceptions:
+
+The @scheme[start] argument from @scheme[serve/servlet] has been replaced with @scheme[site+start], which can be a procedure from a request to a response or a Dispatch site. If this argument is a site, the web server dispatches incoming requests straight there. If the argument is a procedure, it should call @scheme[dispatch] with an appropriate request and site.
+
+The default values of @scheme[servlet-path] and @scheme[servlet-regexp] have been changed to @scheme[""] and @scheme[#rx""] respectively. This causes all requests to be sent to @scheme[site+servlet]. If Dispatch cannot find a matching rule it raises @scheme[exn:dispatch], passing control back to @scheme[serve/servlet].
+
+The default value of @scheme[file-not-found-responder] has been replaced with Dispatch's @italic{controller not found} message.}
 
 @subsection[#:tag "custom-args"]{Custom URL pattern arguments}
 
@@ -381,7 +408,7 @@ Returns a symbolic version of the identifier to which @scheme[controller] is bou
 @defproc[(controller-site [controller controller?]) site?]{
 Returns the site associated with @scheme[controller].}
 
-@defproc[(controller-pipeline [controller controller?]) (listof (request? -> response?))]{
+@defproc[(controller-pipeline [controller controller?]) (listof (request? -> response/c))]{
 Returns @scheme[controller]'s pipeline, or @scheme[null] if @scheme[controller] has no pipeline. Raises @scheme[exn:fail:contract] if @scheme[controller] has not been initialised with @scheme[define-controller].}
 
 @defproc[(controller-body [controller controller?]) procedure?]{
@@ -416,3 +443,7 @@ Returns the encoder procedure associated with @scheme[arg].}
 
 @defproc[(set-arg-encoder! [arg arg?] [proc (-> any string?)]) void?]{
 Sets the encoder procedure of @scheme[arg] to @scheme[proc].}
+
+@section{Acknowledgements}
+
+Many thanks to the following for their contributions: Jay McCarthy, Karsten Patzwaldt and Noel Welsh.

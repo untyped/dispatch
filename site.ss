@@ -1,12 +1,9 @@
 #lang scheme/base
 
-(require net/url
-         scheme/contract
-         scheme/match
-         srfi/13
-         srfi/26
+(require "base.ss")
+
+(require srfi/13
          web-server/dispatchers/dispatch
-         "base.ss"
          "pattern.ss"
          "response.ss"
          "struct-private.ss")
@@ -70,7 +67,7 @@
 (define (create-undefined-body id)
   (make-undefined-body
    (lambda (request . args)
-     (make-undefined-response (debug "RQ" request) (debug "ID" id) (debug "ARGS" args)))))
+     (make-undefined-response request id args))))
 
 ; Provide statements --------------------------- 
 
