@@ -2,7 +2,7 @@
 
 (require (planet untyped/unlib:3/require))
 
-(define-library-aliases mirrors    (planet untyped/mirrors:2)       #:provide)
+(define-library-aliases mirrors    (planet untyped/mirrors:2:2)     #:provide)
 (define-library-aliases unlib      (planet untyped/unlib:3)         #:provide)
 (define-library-aliases schemeunit (planet schematics/schemeunit:3) #:provide)
 
