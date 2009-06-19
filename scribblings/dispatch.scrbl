@@ -89,9 +89,9 @@ Now that the site has been defined we just need a servlet to create a working we
   (require (planet untyped/dispatch)
            "site.ss")
 
-  (serve/dispatch site)]
+  (serve/dispatch blog)]
 
-@scheme[serve/dispatch] starts a web server and populates it with a single servlet that dispatches to @scheme[site] whenever it receives an HTTP request.
+@scheme[serve/dispatch] starts a web server and populates it with a single servlet that dispatches to @scheme[blog] whenever it receives an HTTP request.
 
 We should now be able to test the site. On the command line type:
 
