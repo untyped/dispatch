@@ -7,9 +7,7 @@
 
 (define release-notes
   '((p "Changes and additions:")
-    (ul (li "added the " (tt "serve/dispatch") " procedure;")
-        (li "updated the quick start in the docs;")
-        (li "ensured PLT compatibility from PLT 4.1.4.1 upwards."))))
+    (ul (li "fixed typo in the docs."))))
 
 (define categories '(net devtools))
 
