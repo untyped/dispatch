@@ -17,9 +17,9 @@
     (display ")" out))
   #:transparent)
 
-; (struct regexp (listof arg) (listof (U string arg)))
+; (struct (-> regexp) (listof arg) (listof (U string arg)))
 (define-struct pattern 
-  (regexp args elements)
+  (regexp-maker args elements)
   #:transparent)
 
 ; (stuct pattern controller)
@@ -65,7 +65,7 @@
 
 (provide/contract
  [struct arg          ([id symbol?] [pattern string?] [decoder procedure?] [encoder procedure?])]
- [struct pattern      ([regexp regexp?] [args (listof arg?)] [elements (listof (or/c string? arg?))])]
+ [struct pattern      ([regexp-maker (-> regexp?)] [args (listof arg?)] [elements (listof (or/c string? procedure? arg?))])]
  [struct rule         ([pattern pattern?] [controller controller?])]
  [struct controller   ([id symbol?] [site site?] [pipeline (listof procedure?)] [body procedure?])]
  [struct site         ([id symbol?] [rules (listof rule?)] [controllers (listof controller?)] [rule-not-found procedure?])])

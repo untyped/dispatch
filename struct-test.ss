@@ -8,13 +8,13 @@
 ; Helpers ----------------------------------------
 
 (define-site blog
-  ([(url "/")                  index]
-   [(url "/new")               create-post]
-   [(url "/new/" (string-arg)) create-post]
+  ([(url "/")                       index]
+   [(url "/new")                    create-post]
+   [(url "/new/" (string-arg))      create-post]
    [(url "/archive/" 
          (integer-arg) "/"
          (integer-arg) "/"
-         (integer-arg))        review-archive])
+         (integer-arg))             review-archive])
   #:other-controllers
   (delete-post))
 
@@ -152,11 +152,11 @@
     (test-equal? "symbol-arg: encoder works with URL-reserved characters"
       ((arg-encoder arg4) 'ab/cd&ef=gh#ij)
       (uri-encode "ab/cd&ef=gh#ij"))
-
+    
     ; Pattern ------------------------------------
     
     (test-equal? "create-pattern: regular expression is produced correctly"
-      (format "~a" (pattern-regexp (make-pattern "/alpha/" (string-arg) "/" (integer-arg) "/")))
+      (format "~a" ((pattern-regexp-maker (make-pattern "/alpha/" (string-arg) "/" (integer-arg) "/"))))
       (format "~a" (pregexp "^/alpha/([^/]+)/([-]?[0-9]+)/\\/?$")))
     
     (test-equal? "pattern-match: no args"
@@ -184,6 +184,16 @@
                      "/123/456/789/")
       (list "123" 456 789))
     
+    (test-case "pattern-match: thunk"
+      (let* ([val   "cat"]
+             [thunk (lambda () val)]
+             [pat   (make-pattern "/" thunk)])
+        (check-equal? (pattern-match pat "/cat") null)
+        (check-equal? (pattern-match pat "/dog") #f)
+        (set! val "dog")
+        (check-equal? (pattern-match pat "/cat") #f)
+        (check-equal? (pattern-match pat "/dog") null)))
+    
     (test-equal? "pattern->string"
       (pattern->string (make-pattern "/" (string-arg) "/" (integer-arg) "/" (integer-arg))
                        (list "123" 456 789))
@@ -204,6 +214,14 @@
       (pattern->string (make-pattern "/" (string-arg) "/" (integer-arg) "/" (integer-arg) "/")
                        (list "123" 456))
       #f)
+    
+    (test-case "pattern->string: thunk"
+      (let* ([val   "cat"]
+             [thunk (lambda () val)]
+             [pat   (make-pattern "/" thunk)])
+        (check-equal? (pattern->string pat null) "/cat")
+        (set! val "dog")
+        (check-equal? (pattern->string pat null) "/dog")))
     
     ; Site and controller ------------------------
 

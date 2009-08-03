@@ -194,17 +194,22 @@ The following sections document the forms and procedures provided.
 
 @subsection{Defining sites and controllers}
 
-@defform/subs[(define-site id (rule ...) site-option ...)
+@defform/subs[#:literals (string thunk) (define-site id (rule ...) site-option ...)
               ([rule        (condition controller-id)]
                [site-option (code:line #:other-controllers (controller-id ...))
                             (code:line #:rule-not-found (request -> response))]
                [condition   (url url-part ...)]
-               [url-part    string arg])]{
+               [url-part    string thunk arg])]{
 Creates a new @italic{site} and a set of @italic{controllers} and binds them to @scheme[id] and each unique @scheme[controller-id].
 
 Controllers are referenced within the site via a collection of @scheme[rules]. Each controller is bound to a single identifier, but may be referenced by as many rules as desired. When a request is dispatched to the site using @scheme[dispatch], the rules are evaluated in the order specified until a match is found. The corresponding controller is called and passed the request and any arguments from the rule's condition(s).
 
-Currently only one type of condition is supported: the @scheme[url] form creates a regular expression pattern that is matched against the the path part of the request URL. String arguments to @scheme[url] are matched verbatim; @scheme[arg] arguments capture patterns in the URL and convert them to Scheme values that are passed to the controller. Anchor strings (@scheme{#anchor}), request arguments (@scheme{?a=b&c=d}) and trailing slashes (@scheme{/}) are ignored when matching.
+Currently only one type of condition is supported: the @scheme[url] form creates a regular expression pattern that is matched against the the path part of the request URL. @scheme[url-part]@schemeidfont{s} may be one of three types:
+
+@itemize{
+  @item{@scheme[string]@schemeidfont{s} are matched verbatim. These are not captured as argument to the controller.;}
+  @item{@scheme[thunk]@schemeidfont{s} are procedures that are called at request handling time and return @scheme[string]@schemeidfont{s}.;}
+  @item{@scheme[arg]@schemeidfont{s} capture patterns in the URL and convert them to Scheme values that are passed to the controller. Anchor strings (@scheme{#anchor}), request arguments (@scheme{?a=b&c=d}) and trailing slashes (@scheme{/}) are ignored when matching.}}
 
 The optional @scheme[#:other-controllers] argument can be used to specify controllers that are not bound to any URL. These controllers may be called like normal procedures (including by continuation) but cannot be used with @scheme[controller-url].}
 

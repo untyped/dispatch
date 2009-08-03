@@ -10,60 +10,62 @@
 
 ; (U string arg) ... -> pattern
 (define (create-pattern . elements)
-  (make-pattern (make-pattern-regexp elements)
+  (make-pattern (make-pattern-regexp-maker elements)
                 (filter arg? elements)
                 elements))
 
 ; Other procedures -----------------------------
 
-; (listof (U string arg)) boolean ... -> string
-(define (make-pattern-regexp elements)
-  ; The call to format is a hack to allow an optional extra ending slash on the URL.
-  (pregexp (format "^~a\\/?$"
-                   (let loop ([rest elements])
-                     (cond [(null? rest)         ""]
-                           [(string? (car rest)) (string-append (regexp-quote (car rest)) (loop (cdr rest)))]
-                           [(arg?    (car rest)) (string-append "(" (arg-pattern (car rest)) ")" (loop (cdr rest)))]
-                           [else                 (raise-exn exn:fail:dispatch
-                                                   (format "Unrecognised pattern component: ~a" (car rest)))])))))
+; (listof (U string (-> string) arg)) ... -> string
+(define (make-pattern-regexp-maker elements)
+  (let ([parts `("^" ,@(for/list ([elem (in-list elements)])
+                         (match elem
+                           [(? string?)    (regexp-quote elem)]
+                           [(? arg?)       (format "(~a)" (arg-pattern elem))]
+                           [(? procedure?) elem]))
+                     "\\/?$")]) ; optional trailing slash
+    (lambda ()
+      (pregexp (apply string-append
+                      (for/list ([part (in-list parts)])
+                        (if (procedure? part)
+                            (regexp-quote (part))
+                            part)))))))
 
-; pattern string -> (U (listof any) #f)
+; pattern string -> (U list #f)
 ;
-; Given a pattern and a string (representing a URL on the server),
-; returns:
+; Given a pattern and a string (representing a URL on the server), returns:
 ;
 ;   - A list of decoded arguments if the pattern matched the string.
 ;   - #f if the pattern did not match the string.
 (define (pattern-match pattern url-string)
-  (define regexp (pattern-regexp pattern))
-  (define matches (regexp-match regexp url-string))
-  (if (and matches (= (length (cdr matches)) 
-                      (length (pattern-args pattern))))
-      (map (lambda (arg match)
-             ((arg-decoder arg) match))
-           (pattern-args pattern)
-           (cdr matches))
-      #f))
+  (let* ([regexp  ((pattern-regexp-maker pattern))]
+         [matches (regexp-match regexp url-string)])
+    (and matches
+         (= (length (cdr matches)) 
+            (length (pattern-args pattern)))
+         (for/list ([arg   (in-list (pattern-args pattern))]
+                    [match (in-list (cdr matches))])
+           ((arg-decoder arg) match)))))
 
-; pattern (listof any) -> (U string #f)
+; pattern list -> (U string #f)
 (define (pattern->string pattern args)
-  (if (= (length (pattern-args pattern)) (length args))
-      (let ([ans (let loop ([elem-rest (pattern-elements pattern)]
-                            [arg-rest args])
-                   (if (null? elem-rest)
-                       ""
-                       (let ([elem (car elem-rest)])
-                         (if (string? elem)
-                             (string-append elem 
-                                            (loop (cdr elem-rest) arg-rest))
-                             (string-append ((arg-encoder elem) (car arg-rest))
-                                            (loop (cdr elem-rest) (cdr arg-rest)))))))])
-        (if (equal? ans "") "/" ans))
-      #f))
+  (and (= (length (pattern-args pattern)) (length args))
+       (let ([ans (apply string-append
+                         (let loop ([elems (pattern-elements pattern)]
+                                    [args  args])
+                           (match elems
+                             [(list) null]
+                             [(list elem elem-rest ...)
+                              (match elem
+                                [(? string?)    (cons elem   (loop elem-rest args))]
+                                [(? procedure?) (cons (elem) (loop elem-rest args))]
+                                [(? arg?)       (cons ((arg-encoder elem) (car args))
+                                                      (loop elem-rest (cdr args)))])])))])
+         (if (equal? ans "") "/" ans))))
 
 ; Provide statements ---------------------------
 
 (provide/contract
- [create-pattern    (->* () () #:rest (listof (or/c string? arg?)) pattern?)]
+ [create-pattern    (->* () () #:rest (listof (or/c string? procedure? arg?)) pattern?)]
  [pattern-match     (-> pattern? string? (or/c list? false/c))]
  [pattern->string   (-> pattern? (listof any/c) (or/c string? false/c))])
