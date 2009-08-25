@@ -3,89 +3,103 @@
 (require "base.ss")
 
 (require net/uri-codec
-         "struct-private.ss")
+         srfi/19
+         (unlib-in time)
+         "core.ss")
 
 ; -> arg
 (define (boolean-arg)
   (make-arg 
-   'boolean
-   "yes|no" 
+   "yes|no|true|false|y|n|t|f|1|0" 
    (lambda (raw)
-     (equal? raw "yes"))
+     (and (member (string-downcase raw) 
+                  (list "yes" "true" "y" "t" "1"))
+          #t))
    (lambda (arg)
      (if arg "yes" "no"))))
 
 ; -> arg
 (define (integer-arg)
   (make-arg 
-   'integer
    "[-]?[0-9]+" 
    (lambda (raw)
      (string->number raw))
    (lambda (arg)
      (if (integer? arg)
          (number->string arg)
-         (raise-exn exn:fail:dispatch
-           (format "Expected integer, given: ~s" arg))))))
+         (raise-type-error 'integer-arg "integer" arg)))))
 
 ; -> arg
-(define (real-arg)
+(define (number-arg)
   (make-arg 
-   'real
    "[-]?[0-9]+|[-]?[0-9]*.[0-9]*?" 
    (lambda (raw)
      (string->number raw))
    (lambda (arg)
      (cond [(integer? arg) (number->string arg)]
            [(real? arg)    (number->string (exact->inexact arg))]
-           [else           (raise-exn exn:fail:dispatch
-                             (format "Expected real, given: ~s" arg))]))))
+           [else           (raise-type-error 'real-arg "real" arg)]))))
 
 ; -> arg
 (define (string-arg)
   (make-arg 
-   'string
    "[^/]+"
    (lambda (raw)
      (uri-decode raw))
    (lambda (arg)
      (if (string? arg)
          (uri-encode arg)
-         (raise-exn exn:fail:dispatch
-           (format "Expected string, given: ~s" arg))))))
+         (raise-type-error 'string-arg "string" arg)))))
 
 ; -> arg
 (define (symbol-arg)
   (make-arg 
-   'symbol
    "[^/]+"
    (lambda (raw)
      (string->symbol (uri-decode raw)))
    (lambda (arg)
      (if (symbol? arg)
          (uri-encode (symbol->string arg))
-         (raise-exn exn:fail:dispatch
-           (format "Expected symbol, given: ~s" arg))))))
+         (raise-type-error 'symbol-arg "symbol" arg)))))
+
+
+(define (time-utc-arg fmt)
+  (make-arg
+   "[^/]+"
+   (lambda (raw)
+     (let ([date (safe-string->date raw fmt)])
+       (if date 
+           (date->time-utc date)
+           (raise-exn exn:dispatch "no match for date-arg"))))
+   (lambda (time)
+     (if (time-utc? time)
+         (date->string (time-utc->date time) fmt)
+         (raise-type-error 'time-utc-arg "time-utc" time)))))
 
 ; -> arg
 (define (rest-arg)
   (make-arg
-   'rest
    ".*"
    (lambda (raw)
      (uri-decode raw))
    (lambda (arg)
      (if (string? arg)
          (uri-encode arg)
-         (raise-exn exn:fail:dispatch
-           (format "Expected string, given: ~s" arg))))))
+         (raise-type-error 'rest-arg "string" arg)))))
+
+; Helpers ----------------------------------------
+
+(define (safe-string->date str fmt)
+  (with-handlers ([exn? (lambda _ #f)])
+    (string->date str fmt)))
 
 ; Provide statements -----------------------------
 
 (provide/contract
- [boolean-arg (-> arg?)]
- [integer-arg (-> arg?)]
- [real-arg    (-> arg?)]
- [string-arg  (-> arg?)]
- [symbol-arg  (-> arg?)]
- [rest-arg    (-> arg?)])
+ [boolean-arg  (-> arg?)]
+ [integer-arg  (-> arg?)]
+ [number-arg   (-> arg?)]
+ [string-arg   (-> arg?)]
+ [symbol-arg   (-> arg?)]
+ [time-utc-arg (-> string? arg?)]
+ [rest-arg     (-> arg?)])

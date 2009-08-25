@@ -2,19 +2,20 @@
 
 (require "base.ss")
 
-(require (for-syntax scheme/base)
-         (schemeunit-in main text-ui))
+(require (schemeunit-in main text-ui)
+         "main.ss")
 
-; (_ expr)
-(define-syntax (test-request stx)
-  (syntax-case stx ()
-    [(_ url)
-     (cond [(identifier-binding #'response?)  #'(make-request 'get (string->url url) null null #f "1.2.3.4" 80 "4.3.2.1")]
-           [(identifier-binding #'response/c) #'(make-request #"GET" (string->url url) null null #f "1.2.3.4" 80 "4.3.2.1")]
-           [else (error "response? and response/c not found")])]))
+; Test data --------------------------------------
+
+(define-site math
+  [("divide"    (integer-arg) (integer-arg))                         divide-numbers]
+  [("add"       (integer-arg) (integer-arg))                         add-numbers]
+  [("subtract"  (integer-arg) (integer-arg))                         subtract-numbers]
+  [("and"       (boolean-arg) (boolean-arg))                         and-booleans]
+  [("after"     (time-utc-arg "~Y~m~d") (time-utc-arg "~Y~m~d"))     time-after])
 
 ; Provide statements -----------------------------
 
 (provide (all-from-out "base.ss")
          (schemeunit-out main text-ui)
-         test-request)
+         (site-out math))

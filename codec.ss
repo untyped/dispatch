@@ -1,0 +1,159 @@
+#lang scheme/base
+
+(require "base.ss")
+
+(require (only-in srfi/13 string-join)
+         "core.ss")
+
+; Accessors --------------------------------------
+
+; site string -> any
+(define (site-dispatch site request)
+  (let ([url-string (clean-request-url request)])
+    (match-let ([(list-rest controller args) (site-decode site url-string)])
+      (if controller
+          (apply controller request args)
+          (raise-exn exn:dispatch (format "no rule for url: ~a" url-string))))))
+
+; controller any ... -> boolean
+(define (controller-access? controller . args)
+  (apply (controller-access-proc controller) args))
+
+; controller any ... -> string
+(define (controller-url controller . args)
+  (for/or ([rule (in-list (site-rules (controller-site controller)))])
+    (and (eq? (rule-controller rule) controller)
+         (pattern-encode (rule-pattern rule) args))))
+
+;  controller
+;  [#:body      (U xml sexp #f)]
+;  [#:id        (U string symbol #f)]
+;  [#:class     (U string symbol #f)]
+;  [#:classes   (listof (U string symbol))]
+;  [#:title     (U string #f)]
+;  [#:format    (U 'mirrors 'sexp 'sexps)]
+;  [#:no-access (U 'hide 'span 'body)]
+; ->
+;  (U xml sexp (listof sexp))
+(define (controller-link
+         controller
+         #:body      [body        #f]
+         #:id        [id          #f]
+         #:class     [class       #f]
+         #:classes   [classes     (if class (list class) null)]
+         #:title     [title       #f]
+         #:format    [link-format (current-link-format)]
+         #:no-access [substitute  'hide]
+         . args)
+  (let* ([access?   (apply controller-access? controller args)]
+         [href      (apply controller-url     controller args)]
+         [body      (cond [body body]
+                          [(eq? link-format 'sexps) (list href)]
+                          [else href])]
+         [id        (and id (string+symbol->string id))]
+         [class     (and (pair? classes) (string-join (map string+symbol->string classes) " "))])
+    (if access?
+        (enum-case dispatch-link-formats link-format
+          [(mirrors) (xml (a (@ [href ,href]
+                                ,(opt-xml-attr id)
+                                ,(opt-xml-attr class)
+                                ,(opt-xml-attr title)) ,body))]
+          [(sexp)    `(a ([href ,href]
+                          ,@(opt-attr-list id)
+                          ,@(opt-attr-list class)
+                          ,@(opt-attr-list title)) ,body)]
+          [(sexps)   `((a ([href ,href]
+                           ,@(opt-attr-list id)
+                           ,@(opt-attr-list class)
+                           ,@(opt-attr-list title)) ,@body))])
+        (enum-case dispatch-link-formats link-format
+          [(mirrors) (enum-case dispatch-link-substitutes substitute
+                       [(hide) (xml)]
+                       [(span) (xml (span (@ ,(opt-xml-attr id)
+                                             ,(opt-xml-attr class class (format "no-access-link ~a" class))
+                                             ,(opt-xml-attr title)) ,body))]
+                       [(body) (xml ,body)])]
+          [(sexp)    (enum-case dispatch-link-substitutes substitute
+                       [(hide) '(span)]
+                       [(span) `(span (,@(opt-attr-list id)
+                                       ,@(opt-attr-list class class (format "no-access-link ~a" class))
+                                       ,@(opt-attr-list title)) ,body)]
+                       [(body) body])]
+          [(sexps)   (enum-case dispatch-link-substitutes substitute
+                       [(hide) null]
+                       [(span) `((span (,@(opt-attr-list id)
+                                        ,@(opt-attr-list class class (format "no-access-link ~a" class))
+                                        ,@(opt-attr-list title)) ,@body))]
+                       [(body) body])]))))
+
+; Patterns ---------------------------------------
+
+; site string -> (cons controller list)
+(define (site-decode site url-string)
+  (or (for/or ([rule (in-list (site-rules site))])
+        (let ([match (pattern-decode (rule-pattern rule) url-string)])
+          (and match (cons (rule-controller rule) match))))
+      (list #f #f)))
+
+; pattern string -> (U list #f)
+(define (pattern-decode pattern url-string)
+  (let* ([regexp  ((pattern-regexp-maker pattern))]
+         [matches (regexp-match regexp url-string)]
+         [decoded (and matches
+                       (= (length (cdr matches)) 
+                          (length (pattern-args pattern)))
+                       (for/list ([arg   (in-list (pattern-args pattern))]
+                                  [match (in-list (cdr matches))])
+                         ((arg-decoder arg) match)))])
+    decoded))
+
+; pattern list -> (U string #f)
+(define (pattern-encode pattern args)
+  (and (= (length (pattern-args pattern)) (length args))
+       (string-append "/" (string-join (let loop ([elems (pattern-elements pattern)]
+                                                  [args  args])
+                                         (match elems
+                                           [(list) null]
+                                           [(list elem elem-rest ...)
+                                            (match elem
+                                              [(? string?)    (cons elem   (loop elem-rest args))]
+                                              [(? procedure?) (cons (elem) (loop elem-rest args))]
+                                              [(? arg?)       (cons ((arg-encoder elem) (car args))
+                                                                    (loop elem-rest (cdr args)))])]))
+                                       "/"))))
+
+; request -> string
+(define (clean-request-url request)
+  (string-append "/" (string-join (map path/param-path (url-path (request-uri request))) "/")))
+
+; (_ id)
+; (_ boolean-expr id)
+; (_ boolean-expr id expr)
+(define-syntax opt-attr-list
+  (syntax-rules ()
+    [(_ test id expr) (if test `([id ,expr]) null)]
+    [(_ test id) (opt-attr-list test id id)]
+    [(_ id) (opt-attr-list id id id)]))
+
+; (U string symbol) -> string
+(define (string+symbol->string val)
+  (if (string? val)
+      val
+      (symbol->string val)))
+
+; Provides ---------------------------------------
+
+(provide/contract
+ [site-dispatch      (-> site? request? any)]
+ [controller-access? (->* (controller?) () #:rest any/c boolean?)]
+ [controller-url     (->* (controller?) () #:rest any/c (or/c string? #f))]
+ [controller-link    (->* (controller?)
+                          (#:body (or/c xml+quotable? pair? null? #f)
+                                  #:id        (or/c symbol? string? #f)
+                                  #:class     (or/c symbol? string? #f)
+                                  #:classes   (listof (or/c symbol? string?))
+                                  #:title     (or/c string? #f)
+                                  #:format    (cut enum-value? dispatch-link-formats     <>)
+                                  #:no-access (cut enum-value? dispatch-link-substitutes <>))
+                          #:rest any/c
+                          any)])
