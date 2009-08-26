@@ -10,7 +10,7 @@
 ; Struct types -----------------------------------
 
 (define-struct site
-  (id rules)
+  (id rules controllers)
   #:property
   prop:custom-write
   (lambda (site out write?)
@@ -22,9 +22,11 @@
 (define-struct controller
   (id
    [site               #:mutable]
+   [wrapper-proc       #:mutable]
    [body-proc          #:mutable]
    [access-proc        #:mutable]
-   [access-denied-proc #:mutable])
+   [access-denied-proc #:mutable]
+   [requestless?       #:mutable])
   #:property
   prop:custom-write
   (lambda (controller out write?)
@@ -33,16 +35,8 @@
      out))
   #:property
   prop:procedure
-  (lambda (controller request . args)
-    (apply
-     (current-controller-wrapper)
-     (lambda (controller request . args)
-       (if (apply (controller-access-proc        controller) args)
-           (apply (controller-body-proc          controller) request args)
-           (apply (controller-access-denied-proc controller) request args)))
-     controller
-     request
-     args))
+  (lambda (controller . args)
+    (apply (controller-wrapper-proc controller) args))
   #:transparent)
 
 ; (struct string (string -> any) (any -> string))
@@ -58,27 +52,21 @@
 
 ; symbol -> controller
 (define (create-controller id)
-  (letrec ([ans (make-controller
-                 id
-                 #f
-                 (lambda (request . args)
-                   (apply (current-controller-undefined-responder) ans request args))
-                 (lambda _ #t)
-                 (lambda (request . args)
-                   (apply (current-access-denied-responder) ans request args)))])
-    ans))
+  (letrec ([controller (make-controller
+                        id
+                        #f
+                        (lambda args (apply (default-controller-wrapper) controller args))
+                        (lambda args (apply (default-controller-undefined-responder) controller args))
+                        (lambda args (apply (default-access-predicate) controller args))
+                        (lambda args (apply (default-access-denied-responder) controller args))
+                        (requestless-controllers?))])
+    controller))
 
 ; (U string arg) ... -> pattern
 (define (create-pattern . elements)
   (make-pattern (make-regexp-maker elements)
                 (filter arg? elements)
                 elements))
-
-; Accessors ------------------------------------
-
-; site -> (listof controller)
-(define (site-controllers site)
-  (remove-duplicates (map rule-controller (site-rules site))))
 
 ; Configuration --------------------------------
 
@@ -89,22 +77,35 @@
 (define current-link-format
   (make-parameter (dispatch-link-formats mirrors)))
 
-; (parameter (controller request any ... -> response))
+; (parameter boolean)
+(define requestless-controllers?
+  (make-parameter #f))
+
+; (parameter (any ... -> boolean))
 ; Initialised in response.ss.
-(define current-access-denied-responder
+(define default-access-predicate
+  (make-parameter (lambda _ #t)))
+
+; (parameter (controller any ... -> response))
+; Initialised in response.ss.
+(define default-access-denied-responder
   (make-parameter (lambda _ (error "not initialised"))))
 
-; (parameter (controller request any ... -> response))
+; (parameter (controller any ... -> response))
 ; Initialised in response.ss.
-(define current-controller-undefined-responder
+(define default-controller-undefined-responder
   (make-parameter (lambda _ (error "not initialised"))))
 
-; (parameter ((controller request any ... -> any)
-;             controller request any ... -> any))
+; (parameter ((any ... -> any) any ... -> any))
 ; Initialised in response.ss.
-(define current-controller-wrapper
-  (make-parameter (lambda (continue controller request . args)
-                    (apply continue controller request args))))
+(define default-controller-wrapper
+  (make-parameter
+   (let ([initial-controller-wrapper
+          (lambda (controller . args)
+            (if (apply (controller-access-proc controller) args)
+                (apply (controller-body-proc controller) args)
+                (apply (controller-access-denied-proc controller) args)))])
+     initial-controller-wrapper)))
 
 ; Helpers ----------------------------------------
 
@@ -115,7 +116,7 @@
                            [(? string?)    (string-append "\\/" (regexp-quote elem))]
                            [(? arg?)       (string-append "\\/(" (arg-pattern elem) ")")]
                            [(? procedure?) (lambda () (string-append "\\/" (regexp-quote (elem))))]))
-                      "\\/?$")]) ; optional trailing slash
+                     "\\/?$")]) ; optional trailing slash
     (lambda ()
       (pregexp (apply string-append
                       (for/list ([part (in-list parts)])
@@ -130,12 +131,15 @@
 
 (provide/contract
  [struct site                            ([id                 symbol?]
-                                          [rules              (listof rule?)])]
+                                          [rules              (listof rule?)]
+                                          [controllers        (listof controller?)])]
  [struct controller                      ([id                 symbol?]
                                           [site               site?]
+                                          [wrapper-proc       (or/c procedure? #f)]
                                           [body-proc          procedure?]
                                           [access-proc        procedure?]
-                                          [access-denied-proc procedure?])]
+                                          [access-denied-proc procedure?]
+                                          [requestless?       boolean?])]
  [struct arg                             ([pattern            string?]
                                           [decoder            procedure?]
                                           [encoder            procedure?])]
@@ -146,8 +150,9 @@
                                           [controller         controller?])]
  [create-controller                      (-> symbol? controller?)]
  [create-pattern                         (->* () () #:rest (listof (or/c string? arg? procedure?)) pattern?)]
- [site-controllers                       (-> site? (listof controller?))]
  [current-link-format                    (parameter/c (or/c 'mirrors 'sexp 'sexps))]
- [current-controller-undefined-responder (parameter/c (->* (controller? request?) () #:rest any/c any))]
- [current-access-denied-responder        (parameter/c (->* (controller? request?) () #:rest any/c any))]
- [current-controller-wrapper             (parameter/c (->* (procedure? controller? request?) () #:rest any/c any))])
+ [requestless-controllers?               (parameter/c boolean?)]
+ [default-controller-wrapper             (parameter/c procedure?)]
+ [default-access-predicate               (parameter/c procedure?)]
+ [default-access-denied-responder        (parameter/c procedure?)]
+ [default-controller-undefined-responder (parameter/c procedure?)])

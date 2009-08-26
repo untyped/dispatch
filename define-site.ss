@@ -1,31 +1,33 @@
 #lang scheme/base
 
-(require (for-syntax scheme/base)
-         "base.ss"
-         (for-template "base.ss"))
+(require "base.ss")
 
-(require (for-syntax scheme/provide-transform
+(require (for-syntax scheme/base
+                     scheme/list
+                     scheme/provide-transform
+                     (unlib-in syntax)
                      "syntax-info.ss")
-         "core.ss")
+         "core.ss"
+         (for-template "base.ss"))
 
 (require (for-syntax (unlib-in syntax)))
 
 (define-syntax (define-site complete-stx)
   
-  (define site-stx          #f) ; site
-  (define controller-stxs null) ; in reverse order ...
-  (define rule-stxs       null) ; in reverse order ...
+  (define id-stx              #f) ; id
+  (define controller-stxs     null) ; in reverse order ...
+  (define rule-stxs           null) ; in reverse order ...
   
   (define (parse-identifier stx)
     (syntax-case stx ()
-      [(site rule ...)
-       (begin (set! site-stx #'site)
-              (parse-rules #'(rule ...)))]))
+      [(id (rule ...) kw ...)
+       (begin (set! id-stx #'id)
+              (parse-rules #'((rule ...) kw ...)))]))
   
   (define (parse-rules stx)
     (syntax-case stx ()
-      [()              (parse-finish)]
-      [(rule rest ...) (parse-rule #'rule #'(rest ...))]))
+      [(() kw ...)              (parse-keywords #'(kw ...))]
+      [((rule rest ...) kw ...) (parse-rule #'rule #'((rest ...) kw ...))]))
   
   (define (parse-rule rule-stx other-stx)
     (syntax-case rule-stx ()
@@ -35,10 +37,19 @@
               (set! controller-stxs (cons #'controller controller-stxs))
               (parse-rules other-stx))]))
   
+  (define (parse-keywords stx)
+    (syntax-case stx ()
+      [() (parse-finish)]
+      [(#:other-controllers (id ...) rest ...)
+       (if (andmap identifier? (syntax->list #'(id ...)))
+           (begin (set! controller-stxs (append (reverse (syntax->list #'(id ...))) controller-stxs))
+                  (parse-keywords #'(rest ...)))
+           (raise-syntax-error #f "#:other-controllers must be a list of identifiers" #'(id ...) complete-stx))]))
+  
   (define (parse-finish)
-    (with-syntax ([site-private     (make-id #f site-stx)]
-                  [site             site-stx]
-                  [(controller ...) (reverse controller-stxs)]
+    (with-syntax ([id-private     (make-id #f id-stx)]
+                  [id             id-stx]
+                  [(controller ...) (remove-duplicates (reverse controller-stxs) symbolic-identifier=?)]
                   [(rule ...)       (reverse rule-stxs)])
       (syntax/loc complete-stx
         (begin
@@ -46,24 +57,24 @@
           (define controller (create-controller 'controller))
           ...
           
-          (define site-private
-            (make-site 'site (list rule ...)))
+          (define id-private
+            (make-site 'id (list rule ...) (list controller ...)))
           
-          (set-controller-site! controller site-private)
+          (set-controller-site! controller id-private)
           ...
           
-          (define-syntax site
+          (define-syntax id
             (let ([certify (syntax-local-certifier #t)])
               (site-info-add!
                (make-site-info
-                (certify #'site)
-                (certify #'site-private)
+                (certify #'id)
+                (certify #'id-private)
                 (list (certify #'controller) ...)))))))))
   
   (syntax-case complete-stx ()
-    [(_ id rule ...)
+    [(_ id (rule ...) kw ...)
      (identifier? #'id)
-     (parse-identifier #'(id rule ...))]))
+     (parse-identifier #'(id (rule ...) kw ...))]))
 
 ; (_ id)
 (define-syntax site-out

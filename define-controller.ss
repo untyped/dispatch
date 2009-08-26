@@ -10,41 +10,66 @@
 
 (define-syntax (define-controller complete-stx)
   
-  (define id-stx          #f)
-  (define request-stx     #f)
-  (define args-stx        #f)
-  (define rest-stx        #f)
-  (define access-expr-stx #'#t)
+  (define id-stx           #f)
+  (define args-stx         #f)
+  (define rest-stx         #f)
+  (define wrapper-proc-stx #'#f)
+  (define access-proc-stx  #'#f)
+  (define denied-proc-stx  #'#f)
+  (define requestless-stx  #'(void))
   
   (define (parse-keywords stx)
     (syntax-case stx ()
+      [(#:wrapper-proc proc other ...)
+       (begin (set! wrapper-proc-stx #'proc)
+              (parse-keywords #'(other ...)))]
       [(#:access? expr other ...)
-       (begin (set! access-expr-stx #'expr)
+       (begin (set! access-proc-stx
+                    (with-syntax ([(arg ...) args-stx])
+                      #'(lambda (arg ...) expr)))
+              (parse-keywords #'(other ...)))]
+      [(#:access-proc proc other ...)
+       (begin (set! access-proc-stx #'proc)
+              (parse-keywords #'(other ...)))]
+      [(#:denied-proc proc other ...)
+       (begin (set! denied-proc-stx #'proc)
+              (parse-keywords #'(other ...)))]
+      [(#:requestless? val other ...)
+       (begin (set! requestless-stx #'val)
               (parse-keywords #'(other ...)))]
       [rest   (parse-body #'rest)]))
   
   (define (parse-body body-stx)
     (with-syntax ([id             id-stx]
-                  [access-id      (make-id id-stx id-stx '-access?)]
+                  [(arg ...)      args-stx]
                   [(expr ...)     body-stx]
-                  [access-expr    access-expr-stx]
-                  [(arg ...)      args-stx])
+                  [body-id        (make-id id-stx id-stx '-body)]
+                  [access-id      (make-id id-stx id-stx '-access?)]
+                  [denied-id      (make-id id-stx id-stx '-access-denied)]
+                  [wrapper-id     (make-id id-stx id-stx '-wrapper)]
+                  [requestless-id (make-id id-stx id-stx '-requestless?)]
+                  [wrapper-proc   wrapper-proc-stx]
+                  [access-proc    access-proc-stx]
+                  [denied-proc    denied-proc-stx]
+                  [requestless?   requestless-stx])
       (quasisyntax/loc complete-stx
-        (begin (set-controller-body-proc!
-                id
-                (let ([id (lambda (request arg ...) expr ...)])
-                  id))
-               (set-controller-access-proc!
-                id
-                (let ([access-id (lambda (arg ...) access-expr)])
-                  access-id))))))
+        (let ([body-id        (lambda (arg ...) expr ...)]
+              [wrapper-id     wrapper-proc]
+              [access-id      access-proc]
+              [denied-id      denied-proc]
+              [requestless-id requestless?])
+          (set-controller-body-proc! id body-id)
+          (when wrapper-id  (set-controller-wrapper-proc! id wrapper-id))
+          (when access-id   (set-controller-access-proc! id access-id))
+          (when denied-id   (set-controller-access-denied-proc! id denied-id))
+          (unless (void? requestless-id)
+            (set-controller-requestless?! id requestless-id))))))
   
   (syntax-case complete-stx ()
-    [(_ (id request . args) keyword+expr ...)
+    [(_ (id arg ...) keyword+expr ...)
      (identifier? #'id)
      (begin (set! id-stx      #'id)
-            (set! request-stx #'request)
-            (set! args-stx    #'args)
+            (set! args-stx    #'(arg ...))
             (parse-keywords   #'(keyword+expr ...)))]))
 
 ; Provide statements -----------------------------

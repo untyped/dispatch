@@ -3,14 +3,13 @@
 (require "base.ss")
 
 (require (mirrors-in)
-         "codec.ss"
          "core.ss")
 
 ; Procedures -------------------------------------
 
-; controller request any ... -> response
-(current-controller-undefined-responder
- (lambda (controller request . args)
+; controller any ... -> response
+(default-controller-undefined-responder
+ (lambda (controller . args)
    (make-html-response
     #:code    500
     #:message "Internal error"
@@ -21,7 +20,9 @@
                           (p (@ [class "example"])
                              (span (@ [class "paren"]) "(")
                              (span (@ [class "controller"]) ,(controller-id controller))
-                             ,@(for/list ([arg (in-list (cons 'request args))])
+                             ,@(for/list ([arg (in-list (if (controller-requestless? controller)
+                                                            args
+                                                            (cons 'request args)))])
                                  (xml (span (@ [class "argument"]) ,(format " ~s" arg))))
                              (span (@ [class "paren"]) ")"))
                           (p "Unfortunately, it looks like this controller has not been defined with a "
@@ -29,9 +30,9 @@
                           (p "If you have written a definition for this controller, make sure it is "
                              "directly or indirectly required by the main module that runs your application."))))))))
 
-; controller request any ... -> response
-(current-access-denied-responder
- (lambda (controller request . args)
+; controller any ... -> response
+(default-access-denied-responder
+ (lambda (controller . args)
    (make-html-response
     #:code    403
     #:message "Access denied"
@@ -56,4 +57,3 @@ p { font-family: arial,sans-serif; }
 .argument { font-family: monaco,monospace; color: #070; }
 ENDCSS
               )))
-

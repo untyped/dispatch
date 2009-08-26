@@ -12,7 +12,9 @@
   (let ([url-string (clean-request-url request)])
     (match-let ([(list-rest controller args) (site-decode site url-string)])
       (if controller
-          (apply controller request args)
+          (if (controller-requestless? controller)
+              (apply controller args)
+              (apply controller request args))
           (raise-exn exn:dispatch (format "no rule for url: ~a" url-string))))))
 
 ; controller any ... -> boolean
@@ -21,9 +23,10 @@
 
 ; controller any ... -> string
 (define (controller-url controller . args)
-  (for/or ([rule (in-list (site-rules (controller-site controller)))])
-    (and (eq? (rule-controller rule) controller)
-         (pattern-encode (rule-pattern rule) args))))
+  (or (for/or ([rule (in-list (site-rules (controller-site controller)))])
+        (and (eq? (rule-controller rule) controller)
+             (pattern-encode (rule-pattern rule) args)))
+      (error "no url for controller" (cons controller args))))
 
 ;  controller
 ;  [#:body      (U xml sexp #f)]
@@ -45,13 +48,16 @@
          #:format    [link-format (current-link-format)]
          #:no-access [substitute  'hide]
          . args)
-  (let* ([access?   (apply controller-access? controller args)]
-         [href      (apply controller-url     controller args)]
-         [body      (cond [body body]
-                          [(eq? link-format 'sexps) (list href)]
-                          [else href])]
-         [id        (and id (string+symbol->string id))]
-         [class     (and (pair? classes) (string-join (map string+symbol->string classes) " "))])
+  (let* ([requestless? (controller-requestless?  controller)]
+         [access?      (apply controller-access? controller args)]
+         [href         (if (controller-requestless? controller)
+                           (apply controller-url controller args)
+                           (apply controller-url controller (cdr args)))]
+         [body         (cond [body body]
+                             [(eq? link-format 'sexps) (list href)]
+                             [else href])]
+         [id           (and id (string+symbol->string id))]
+         [class        (and (pair? classes) (string-join (map string+symbol->string classes) " "))])
     (if access?
         (enum-case dispatch-link-formats link-format
           [(mirrors) (xml (a (@ [href ,href]

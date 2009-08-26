@@ -3,8 +3,9 @@
 (require "base.ss")
 
 (require net/uri-codec
+         scheme/string
          srfi/19
-         (unlib-in time)
+         (unlib-in enumeration time)
          "core.ss")
 
 ; -> arg
@@ -87,6 +88,24 @@
          (uri-encode arg)
          (raise-type-error 'rest-arg "string" arg)))))
 
+; enum -> arg
+(define (enum-arg enum)
+  (make-arg
+   (string-join (map regexp-quote
+                     (map (cut format "~a" <>)
+                          (enum-values enum)))
+                "|")
+   (lambda (raw)
+     (for/or ([val (in-list (enum-values enum))])
+       (and (equal? (format "~a" val) raw) val)))
+   (lambda (val)
+     (if (enum-value? enum val)
+         val
+         (raise-type-error
+          (enum-name enum)
+          (format "~a" (enum-values enum))
+          val)))))
+
 ; Helpers ----------------------------------------
 
 (define (safe-string->date str fmt)
@@ -102,4 +121,5 @@
  [string-arg   (-> arg?)]
  [symbol-arg   (-> arg?)]
  [time-utc-arg (-> string? arg?)]
- [rest-arg     (-> arg?)])
+ [rest-arg     (-> arg?)]
+ [enum-arg     (-> enum? arg?)])

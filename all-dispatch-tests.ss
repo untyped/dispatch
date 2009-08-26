@@ -52,7 +52,7 @@
     
     (test-case "site-dispatch : controller undefined"
       (check-pred response/full? (site-dispatch math (test-request "/subtract/1/2")))
-      (parameterize ([current-controller-undefined-responder
+      (parameterize ([default-controller-undefined-responder
                       (lambda (controller request . args)
                         (cons (controller-id controller) args))])
         (check-equal? (site-dispatch math (test-request "/subtract/1/2"))
@@ -60,7 +60,7 @@
     
     (test-case "site-dispatch : access denied"
       (check-pred response/full? (site-dispatch math (test-request "/divide/8/0")))
-      (parameterize ([current-access-denied-responder
+      (parameterize ([default-access-denied-responder
                       (lambda (controller request . args)
                         (cons (controller-id controller) args))])
         (check-equal? (site-dispatch math (test-request "/divide/8/0"))
@@ -82,11 +82,11 @@
       (check-equal? (controller-url add-numbers 1 2)    "/add/1/2"))
     
     (test-case "controller-access? : divide-numbers"
-      (check-true  (controller-access? divide-numbers 8 2))
-      (check-false (controller-access? divide-numbers 8 0)))
+      (check-true  (controller-access? divide-numbers (test-request "foo") 8 2))
+      (check-false (controller-access? divide-numbers (test-request "foo") 8 0)))
     
     (test-case "controller-link : no arguments"
-      (let* ([link-ref (cut controller-link divide-numbers 8 4)]
+      (let* ([link-ref (cut controller-link divide-numbers (test-request "foo") 8 4)]
              [mirrors  (link-ref)]
              [sexp     (parameterize ([current-link-format 'sexp]) (link-ref))]
              [sexps    (parameterize ([current-link-format 'sexps]) (link-ref))])
@@ -97,12 +97,13 @@
     
     (test-case "controller-link : all arguments"
       (let* ([link-ref (lambda (body)
-                         (controller-link divide-numbers
-                                    8 4
-                                    #:id    'id
-                                    #:class 'class
-                                    #:title "title"
-                                    #:body  body))]
+                         (controller-link
+                          divide-numbers
+                          (test-request "foo") 8 4
+                          #:id    'id
+                          #:class 'class
+                          #:title "title"
+                          #:body  body))]
              [mirrors  (link-ref "body")]
              [sexp     (parameterize ([current-link-format 'sexp]) (link-ref "body"))]
              [sexps    (parameterize ([current-link-format 'sexps]) (link-ref '("body")))])
@@ -112,7 +113,7 @@
         (check-equal? sexps '((a ([href "/divide/8/4"] [id "id"] [class "class"] [title "title"]) "body")))))
     
     (test-case "controller-link : no access : hide"
-      (let* ([link-ref (cut controller-link divide-numbers 8 0)]
+      (let* ([link-ref (cut controller-link divide-numbers (test-request "foo") 8 0)]
              [mirrors  (link-ref)]
              [sexp     (parameterize ([current-link-format 'sexp]) (link-ref))]
              [sexps    (parameterize ([current-link-format 'sexps]) (link-ref))])
@@ -122,7 +123,7 @@
         (check-equal? sexps null)))
     
     (test-case "controller-link : no access : span"
-      (let* ([link-ref (cut controller-link divide-numbers 8 0 #:no-access 'span #:id 'id #:class 'class #:title "title")]
+      (let* ([link-ref (cut controller-link divide-numbers (test-request "foo") 8 0 #:no-access 'span #:id 'id #:class 'class #:title "title")]
              [mirrors  (link-ref)]
              [sexp     (parameterize ([current-link-format 'sexp]) (link-ref))]
              [sexps    (parameterize ([current-link-format 'sexps]) (link-ref))])
@@ -132,7 +133,7 @@
         (check-equal? sexps '((span ([id "id"] [class "no-access-link class"] [title "title"]) "/divide/8/0")))))
     
     (test-case "controller-link : no access : body"
-      (let* ([link-ref (cut controller-link divide-numbers 8 0 #:no-access 'body)]
+      (let* ([link-ref (cut controller-link divide-numbers (test-request "foo") 8 0 #:no-access 'body)]
              [mirrors  (link-ref)]
              [sexp     (parameterize ([current-link-format 'sexp]) (link-ref))]
              [sexps    (parameterize ([current-link-format 'sexps]) (link-ref))])
@@ -149,10 +150,10 @@
         and-booleans
         time-after))
     
-    (test-case "current-controller-wrapper"
-      (parameterize ([current-controller-wrapper
-                      (lambda (continue controller request . args)
-                        (add1 (apply continue controller request args)))])
+    (test-case "default-controller-wrapper"
+      (parameterize ([default-controller-wrapper
+                      (lambda (controller request . args)
+                        (add1 (apply (controller-body-proc controller) request args)))])
         (check-equal? (site-dispatch math (test-request "/divide/8/2")) 5)))
     
     (test-case "boolean-arg"

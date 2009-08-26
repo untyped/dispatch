@@ -24,13 +24,15 @@
          controller-link
          controller?
          current-link-format
-         current-controller-undefined-responder
-         current-access-denied-responder
-         current-controller-wrapper
-
+         requestless-controllers?
+         default-controller-wrapper
+         default-controller-undefined-responder
+         default-access-denied-responder
+         
          boolean-arg
          time-utc-arg
          integer-arg
          number-arg
          string-arg
-         symbol-arg)
+         symbol-arg
+         enum-arg)
