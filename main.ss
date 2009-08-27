@@ -9,26 +9,33 @@
 
 ; Provide statements -----------------------------
 
-(provide define-site
-         define-controller
-         site-dispatch
-         site-out
-         site-controllers
-         site?
-         controller-id
-         controller-site
-         controller-body-proc
-         controller-access-proc
-         controller-url
-         controller-access?
-         controller-link
-         controller?
+(provide ; core.ss:
+         (struct-out site)
+         (struct-out rule)
+         (struct-out pattern)
+         (struct-out arg)
+         (struct-out controller)
          current-link-format
          requestless-controllers?
          default-controller-wrapper
+         default-access-predicate
          default-controller-undefined-responder
          default-access-denied-responder
          
+         ; define-site.ss:
+         define-site
+         site-out
+         
+         ; define-controller.ss:
+         define-controller
+         
+         ; codec.ss:
+         site-dispatch
+         controller-url
+         controller-access?
+         controller-link
+         
+         ; arg.ss:
          boolean-arg
          time-utc-arg
          integer-arg

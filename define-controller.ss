@@ -16,7 +16,7 @@
   (define wrapper-proc-stx #'#f)
   (define access-proc-stx  #'#f)
   (define denied-proc-stx  #'#f)
-  (define requestless-stx  #'(void))
+  (define requestless-stx  #'(requestless-controllers?))
   
   (define (parse-keywords stx)
     (syntax-case stx ()
@@ -59,11 +59,13 @@
               [denied-id      denied-proc]
               [requestless-id requestless?])
           (set-controller-body-proc! id body-id)
-          (when wrapper-id  (set-controller-wrapper-proc! id wrapper-id))
-          (when access-id   (set-controller-access-proc! id access-id))
-          (when denied-id   (set-controller-access-denied-proc! id denied-id))
-          (unless (void? requestless-id)
-            (set-controller-requestless?! id requestless-id))))))
+          (when wrapper-id
+            (set-controller-wrapper-proc! id wrapper-id))
+          (when access-id
+            (set-controller-access-proc! id access-id))
+          (when denied-id
+            (set-controller-access-denied-proc! id denied-id))
+          (set-controller-requestless?! id requestless-id)))))
   
   (syntax-case complete-stx ()
     [(_ (id arg ...) keyword+expr ...)

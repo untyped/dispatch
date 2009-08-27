@@ -8,11 +8,11 @@
 ; Test data --------------------------------------
 
 (define-site math
-  ([("divide"    (integer-arg) (integer-arg))                         divide-numbers]
-   [("add"       (integer-arg) (integer-arg))                         add-numbers]
-   [("subtract"  (integer-arg) (integer-arg))                         subtract-numbers]
-   [("and"       (boolean-arg) (boolean-arg))                         and-booleans]
-   [("after"     (time-utc-arg "~Y~m~d") (time-utc-arg "~Y~m~d"))     time-after]))
+  ([("/divide/"    (integer-arg)           "/" (integer-arg))           divide-numbers]
+   [("/add/"       (integer-arg)           "/" (integer-arg))           add-numbers]
+   [("/subtract/"  (integer-arg)           "/" (integer-arg))           subtract-numbers]
+   [("/and/"       (boolean-arg)           "/" (boolean-arg))           and-booleans]
+   [("/after/"     (time-utc-arg "~Y~m~d") "/" (time-utc-arg "~Y~m~d")) time-after]))
 
 ; Provide statements -----------------------------
 

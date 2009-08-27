@@ -81,6 +81,17 @@
 (define requestless-controllers?
   (make-parameter #f))
 
+; (parameter ((any ... -> any) any ... -> any))
+; Initialised in response.ss.
+(define default-controller-wrapper
+  (make-parameter
+   (let ([initial-controller-wrapper
+          (lambda (controller . args)
+            (if (apply (controller-access-proc controller) args)
+                (apply (controller-body-proc controller) args)
+                (apply (controller-access-denied-proc controller) args)))])
+     initial-controller-wrapper)))
+
 ; (parameter (any ... -> boolean))
 ; Initialised in response.ss.
 (define default-access-predicate
@@ -96,27 +107,17 @@
 (define default-controller-undefined-responder
   (make-parameter (lambda _ (error "not initialised"))))
 
-; (parameter ((any ... -> any) any ... -> any))
-; Initialised in response.ss.
-(define default-controller-wrapper
-  (make-parameter
-   (let ([initial-controller-wrapper
-          (lambda (controller . args)
-            (if (apply (controller-access-proc controller) args)
-                (apply (controller-body-proc controller) args)
-                (apply (controller-access-denied-proc controller) args)))])
-     initial-controller-wrapper)))
-
 ; Helpers ----------------------------------------
 
 ; (listof (U string (-> string) arg)) ... -> string
 (define (make-regexp-maker elements)
-  (let ([parts `("^" ,@(for/list ([elem (in-list elements)])
-                         (match elem
-                           [(? string?)    (string-append "\\/" (regexp-quote elem))]
-                           [(? arg?)       (string-append "\\/(" (arg-pattern elem) ")")]
-                           [(? procedure?) (lambda () (string-append "\\/" (regexp-quote (elem))))]))
-                     "\\/?$")]) ; optional trailing slash
+  (let ([parts `("^"
+                 ,@(for/list ([elem (in-list elements)])
+                     (match elem
+                       [(? string?)    (regexp-quote elem)]
+                       [(? arg?)       (string-append "(" (arg-pattern elem) ")")]
+                       [(? procedure?) (lambda () (regexp-quote (elem)))]))
+                 "\\/?$")]) ; optional trailing slash
     (lambda ()
       (pregexp (apply string-append
                       (for/list ([part (in-list parts)])
