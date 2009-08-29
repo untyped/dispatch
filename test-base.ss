@@ -5,17 +5,16 @@
 (require (schemeunit-in main text-ui)
          "main.ss")
 
-; Test data --------------------------------------
+; Utilities --------------------------------------
 
-(define-site math
-  ([("/divide/"    (integer-arg)           "/" (integer-arg))           divide-numbers]
-   [("/add/"       (integer-arg)           "/" (integer-arg))           add-numbers]
-   [("/subtract/"  (integer-arg)           "/" (integer-arg))           subtract-numbers]
-   [("/and/"       (boolean-arg)           "/" (boolean-arg))           and-booleans]
-   [("/after/"     (time-utc-arg "~Y~m~d") "/" (time-utc-arg "~Y~m~d")) time-after]))
+; string -> request
+(define (test-request url)
+  (make-request #"GET" (string->url url) null null #f "1.2.3.4" 80 "4.3.2.1"))
 
 ; Provide statements -----------------------------
 
 (provide (all-from-out "base.ss")
-         (schemeunit-out main text-ui)
-         (site-out math))
+         (schemeunit-out main text-ui))
+
+(provide/contract
+ [test-request (-> string? request?)])
