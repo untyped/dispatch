@@ -15,7 +15,7 @@
           (if (controller-requestless? controller)
               (apply controller args)
               (apply controller request args))
-          (raise-exn exn:dispatch (format "no rule for url: ~a" url-string))))))
+          ((site-not-found-proc site) request)))))
 
 ; controller any ... -> boolean
 (define (controller-access? controller . args)
@@ -34,8 +34,8 @@
 ;  [#:class     (U string symbol #f)]
 ;  [#:classes   (listof (U string symbol))]
 ;  [#:title     (U string #f)]
-;  [#:format    (U 'mirrors 'sexp 'sexps)]
-;  [#:no-access (U 'hide 'span 'body)]
+;  [#:format    link-format]
+;  [#:no-access link-substitute]
 ; ->
 ;  (U xml sexp (listof sexp))
 (define (controller-link
@@ -45,52 +45,52 @@
          #:class     [class       #f]
          #:classes   [classes     (if class (list class) null)]
          #:title     [title       #f]
-         #:format    [link-format (current-link-format)]
-         #:no-access [substitute  'hide]
+         #:format    [link-format (default-link-format)]
+         #:no-access [substitute  (default-link-substitute)]
          . args)
-  (let* ([requestless? (controller-requestless?  controller)]
-         [access?      (apply controller-access? controller args)]
-         [href         (if (controller-requestless? controller)
-                           (apply controller-url controller args)
-                           (apply controller-url controller (cdr args)))]
-         [body         (cond [body body]
-                             [(eq? link-format 'sexps) (list href)]
-                             [else href])]
-         [id           (and id (string+symbol->string id))]
-         [class        (and (pair? classes) (string-join (map string+symbol->string classes) " "))])
-    (if access?
-        (enum-case dispatch-link-formats link-format
-          [(mirrors) (xml (a (@ [href ,href]
-                                ,(opt-xml-attr id)
-                                ,(opt-xml-attr class)
-                                ,(opt-xml-attr title)) ,body))]
-          [(sexp)    `(a ([href ,href]
-                          ,@(opt-attr-list id)
-                          ,@(opt-attr-list class)
-                          ,@(opt-attr-list title)) ,body)]
-          [(sexps)   `((a ([href ,href]
-                           ,@(opt-attr-list id)
-                           ,@(opt-attr-list class)
-                           ,@(opt-attr-list title)) ,@body))])
-        (enum-case dispatch-link-formats link-format
-          [(mirrors) (enum-case dispatch-link-substitutes substitute
-                       [(hide) (xml)]
-                       [(span) (xml (span (@ ,(opt-xml-attr id)
-                                             ,(opt-xml-attr class class (format "no-access-link ~a" class))
-                                             ,(opt-xml-attr title)) ,body))]
-                       [(body) (xml ,body)])]
-          [(sexp)    (enum-case dispatch-link-substitutes substitute
-                       [(hide) '(span)]
-                       [(span) `(span (,@(opt-attr-list id)
-                                       ,@(opt-attr-list class class (format "no-access-link ~a" class))
-                                       ,@(opt-attr-list title)) ,body)]
-                       [(body) body])]
-          [(sexps)   (enum-case dispatch-link-substitutes substitute
-                       [(hide) null]
-                       [(span) `((span (,@(opt-attr-list id)
-                                        ,@(opt-attr-list class class (format "no-access-link ~a" class))
-                                        ,@(opt-attr-list title)) ,@body))]
-                       [(body) body])]))))
+  (begin0 (let* ([requestless? (controller-requestless?  controller)]
+                 [access?      (apply controller-access? controller args)]
+                 [href         (if (controller-requestless? controller)
+                                   (apply controller-url controller args)
+                                   (apply controller-url controller (cdr args)))]
+                 [body         (cond [body body]
+                                     [(eq? link-format 'sexps) (list href)]
+                                     [else href])]
+                 [id           (and id (string+symbol->string id))]
+                 [class        (and (pair? classes) (string-join (map string+symbol->string classes) " "))])
+            (if access?
+                (enum-case link-formats link-format
+                  [(mirrors) (xml (a (@ [href ,href]
+                                        ,(opt-xml-attr id)
+                                        ,(opt-xml-attr class)
+                                        ,(opt-xml-attr title)) ,body))]
+                  [(sexp)    `(a ([href ,href]
+                                  ,@(opt-attr-list id)
+                                  ,@(opt-attr-list class)
+                                  ,@(opt-attr-list title)) ,body)]
+                  [(sexps)   `((a ([href ,href]
+                                   ,@(opt-attr-list id)
+                                   ,@(opt-attr-list class)
+                                   ,@(opt-attr-list title)) ,@body))])
+                (enum-case link-formats link-format
+                  [(mirrors) (enum-case link-substitutes substitute
+                               [(hide) (xml)]
+                               [(span) (xml (span (@ ,(opt-xml-attr id)
+                                                     ,(opt-xml-attr class class (format "no-access-link ~a" class))
+                                                     ,(opt-xml-attr title)) ,body))]
+                               [(body) (xml ,body)])]
+                  [(sexp)    (enum-case link-substitutes substitute
+                               [(hide) '(span)]
+                               [(span) `(span (,@(opt-attr-list id)
+                                               ,@(opt-attr-list class class (format "no-access-link ~a" class))
+                                               ,@(opt-attr-list title)) ,body)]
+                               [(body) body])]
+                  [(sexps)   (enum-case link-substitutes substitute
+                               [(hide) null]
+                               [(span) `((span (,@(opt-attr-list id)
+                                                ,@(opt-attr-list class class (format "no-access-link ~a" class))
+                                                ,@(opt-attr-list title)) ,@body))]
+                               [(body) body])])))))
 
 ; Patterns ---------------------------------------
 
@@ -159,7 +159,7 @@
                                   #:class     (or/c symbol? string? #f)
                                   #:classes   (listof (or/c symbol? string?))
                                   #:title     (or/c string? #f)
-                                  #:format    (cut enum-value? dispatch-link-formats     <>)
-                                  #:no-access (cut enum-value? dispatch-link-substitutes <>))
+                                  #:format    (cut enum-value? link-formats     <>)
+                                  #:no-access (cut enum-value? link-substitutes <>))
                           #:rest any/c
                           any)])

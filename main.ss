@@ -15,8 +15,12 @@
          (struct-out pattern)
          (struct-out arg)
          (struct-out controller)
-         current-link-format
-         requestless-controllers?
+         link-formats
+         link-substitutes
+         default-link-format
+         default-link-substitute
+         
+         plain-controller-wrapper
          default-controller-wrapper
          default-access-predicate
          default-controller-undefined-responder

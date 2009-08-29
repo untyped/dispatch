@@ -100,11 +100,8 @@
        (and (equal? (format "~a" val) raw) val)))
    (lambda (val)
      (if (enum-value? enum val)
-         val
-         (raise-type-error
-          (enum-name enum)
-          (format "~a" (enum-values enum))
-          val)))))
+         (format "~a" val)
+         (raise-type-error (enum-name enum) (format "~a" (enum-values enum)) val)))))
 
 ; Helpers ----------------------------------------
 

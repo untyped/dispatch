@@ -10,7 +10,7 @@
 ; Struct types -----------------------------------
 
 (define-struct site
-  (id rules controllers)
+  (id rules controllers not-found-proc)
   #:property
   prop:custom-write
   (lambda (site out write?)
@@ -36,7 +36,7 @@
   #:property
   prop:procedure
   (lambda (controller . args)
-    (apply (controller-wrapper-proc controller) args))
+    (apply (controller-wrapper-proc controller) controller args))
   #:transparent)
 
 ; (struct string (string -> any) (any -> string))
@@ -50,16 +50,16 @@
 
 ; Constructors -----------------------------------
 
-; symbol -> controller
-(define (create-controller id)
+; symbol boolean -> controller
+(define (create-controller id requestless?)
   (letrec ([controller (make-controller
                         id
                         #f
-                        (lambda args (apply (default-controller-wrapper) controller args))
+                        (lambda (controller . args) (apply (default-controller-wrapper) controller args))
                         (lambda args (apply (default-controller-undefined-responder) controller args))
                         (lambda args (apply (default-access-predicate) controller args))
                         (lambda args (apply (default-access-denied-responder) controller args))
-                        (requestless-controllers?))])
+                        requestless?)])
     controller))
 
 ; (U string arg) ... -> pattern
@@ -70,27 +70,27 @@
 
 ; Configuration --------------------------------
 
-(define-enum dispatch-link-formats     (mirrors sexp sexps))
-(define-enum dispatch-link-substitutes (hide span body))
+(define-enum link-formats     (mirrors sexp sexps))
+(define-enum link-substitutes (hide span body))
 
-; (parameter dispatch-link-format)
-(define current-link-format
-  (make-parameter (dispatch-link-formats mirrors)))
+; (parameter link-format)
+(define default-link-format
+  (make-parameter (link-formats mirrors)))
 
-; (parameter boolean)
-(define requestless-controllers?
-  (make-parameter #f))
+; (parameter link-format)
+(define default-link-substitute
+  (make-parameter (link-substitutes body)))
+
+; controller any ... -> any
+(define (plain-controller-wrapper controller . args)
+  (if (apply (controller-access-proc controller) args)
+      (apply (controller-body-proc controller) args)
+      (apply (controller-access-denied-proc controller) args)))
 
 ; (parameter ((any ... -> any) any ... -> any))
 ; Initialised in response.ss.
 (define default-controller-wrapper
-  (make-parameter
-   (let ([initial-controller-wrapper
-          (lambda (controller . args)
-            (if (apply (controller-access-proc controller) args)
-                (apply (controller-body-proc controller) args)
-                (apply (controller-access-denied-proc controller) args)))])
-     initial-controller-wrapper)))
+  (make-parameter plain-controller-wrapper))
 
 ; (parameter (any ... -> boolean))
 ; Initialised in response.ss.
@@ -127,13 +127,14 @@
 
 ; Provide statements -----------------------------
 
-(provide dispatch-link-formats
-         dispatch-link-substitutes)
+(provide link-formats
+         link-substitutes)
 
 (provide/contract
  [struct site                            ([id                 symbol?]
                                           [rules              (listof rule?)]
-                                          [controllers        (listof controller?)])]
+                                          [controllers        (listof controller?)]
+                                          [not-found-proc     (-> request? response/c)])]
  [struct controller                      ([id                 symbol?]
                                           [site               site?]
                                           [wrapper-proc       (or/c procedure? #f)]
@@ -149,10 +150,11 @@
                                           [elements           (listof (or/c string? procedure? arg?))])]
  [struct rule                            ([pattern            pattern?]
                                           [controller         controller?])]
- [create-controller                      (-> symbol? controller?)]
+ [create-controller                      (-> symbol? boolean? controller?)]
  [create-pattern                         (->* () () #:rest (listof (or/c string? arg? procedure?)) pattern?)]
- [current-link-format                    (parameter/c (or/c 'mirrors 'sexp 'sexps))]
- [requestless-controllers?               (parameter/c boolean?)]
+ [default-link-format                    (parameter/c (enum-value/c link-formats))]
+ [default-link-substitute                (parameter/c (enum-value/c link-substitutes))]
+ [plain-controller-wrapper               (->* (controller?) () #:rest any/c any)]
  [default-controller-wrapper             (parameter/c procedure?)]
  [default-access-predicate               (parameter/c procedure?)]
  [default-access-denied-responder        (parameter/c procedure?)]

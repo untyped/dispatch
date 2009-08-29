@@ -7,16 +7,17 @@
                      scheme/provide-transform
                      (unlib-in syntax)
                      "syntax-info.ss")
+         web-server/dispatchers/dispatch
          "core.ss"
          (for-template "base.ss"))
 
-(require (for-syntax (unlib-in syntax)))
-
 (define-syntax (define-site complete-stx)
   
-  (define id-stx              #f) ; id
+  (define id-stx              #f)   ; id
   (define controller-stxs     null) ; in reverse order ...
   (define rule-stxs           null) ; in reverse order ...
+  (define requestless-stx     #'#f)
+  (define not-found-stx       #'(lambda (request) (next-dispatcher)))
   
   (define (parse-identifier stx)
     (syntax-case stx ()
@@ -40,6 +41,12 @@
   (define (parse-keywords stx)
     (syntax-case stx ()
       [() (parse-finish)]
+      [(#:requestless? val rest ...)
+       (begin (set! requestless-stx #'val)
+              (parse-keywords #'(rest ...)))]
+      [(#:not-found expr rest ...)
+       (begin (set! not-found-stx #'expr)
+              (parse-keywords #'(rest ...)))]
       [(#:other-controllers (id ...) rest ...)
        (if (andmap identifier? (syntax->list #'(id ...)))
            (begin (set! controller-stxs (append (reverse (syntax->list #'(id ...))) controller-stxs))
@@ -50,15 +57,23 @@
     (with-syntax ([id-private     (make-id #f id-stx)]
                   [id             id-stx]
                   [(controller ...) (remove-duplicates (reverse controller-stxs) symbolic-identifier=?)]
-                  [(rule ...)       (reverse rule-stxs)])
+                  [(rule ...)       (reverse rule-stxs)]
+                  [requestless-expr requestless-stx]
+                  [not-found-proc   not-found-stx])
       (syntax/loc complete-stx
         (begin
           
-          (define controller (create-controller 'controller))
+          (define requestless? requestless-expr)
+          
+          (define controller (create-controller 'controller requestless?))
           ...
           
           (define id-private
-            (make-site 'id (list rule ...) (list controller ...)))
+            (make-site
+             'id
+             (list rule ...)
+             (list controller ...)
+             not-found-proc))
           
           (set-controller-site! controller id-private)
           ...
