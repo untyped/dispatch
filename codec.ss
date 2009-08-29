@@ -29,24 +29,24 @@
       (error "no url for controller" (cons controller args))))
 
 ;  controller
-;  [#:body      (U xml sexp #f)]
-;  [#:id        (U string symbol #f)]
-;  [#:class     (U string symbol #f)]
-;  [#:classes   (listof (U string symbol))]
-;  [#:title     (U string #f)]
-;  [#:format    link-format]
-;  [#:no-access link-substitute]
+;  [#:body    (U xml sexp #f)]
+;  [#:id      (U string symbol #f)]
+;  [#:class   (U string symbol #f)]
+;  [#:classes (listof (U string symbol))]
+;  [#:title   (U string #f)]
+;  [#:format  link-format]
+;  [#:else    (U link-substitute html)]
 ; ->
 ;  (U xml sexp (listof sexp))
 (define (controller-link
          controller
-         #:body      [body        #f]
-         #:id        [id          #f]
-         #:class     [class       #f]
-         #:classes   [classes     (if class (list class) null)]
-         #:title     [title       #f]
-         #:format    [link-format (default-link-format)]
-         #:no-access [substitute  (default-link-substitute)]
+         #:body    [body        #f]
+         #:id      [id          #f]
+         #:class   [class       #f]
+         #:classes [classes     (if class (list class) null)]
+         #:title   [title       #f]
+         #:format  [link-format (default-link-format)]
+         #:else    [substitute  (default-link-substitute)]
          . args)
   (begin0 (let* ([requestless? (controller-requestless?  controller)]
                  [access?      (apply controller-access? controller args)]
@@ -78,19 +78,22 @@
                                [(span) (xml (span (@ ,(opt-xml-attr id)
                                                      ,(opt-xml-attr class class (format "no-access-link ~a" class))
                                                      ,(opt-xml-attr title)) ,body))]
-                               [(body) (xml ,body)])]
+                               [(body) (xml ,body)]
+                               [else   substitute])]
                   [(sexp)    (enum-case link-substitutes substitute
                                [(hide) '(span)]
                                [(span) `(span (,@(opt-attr-list id)
                                                ,@(opt-attr-list class class (format "no-access-link ~a" class))
                                                ,@(opt-attr-list title)) ,body)]
-                               [(body) body])]
+                               [(body) body]
+                               [else   substitute])]
                   [(sexps)   (enum-case link-substitutes substitute
                                [(hide) null]
                                [(span) `((span (,@(opt-attr-list id)
                                                 ,@(opt-attr-list class class (format "no-access-link ~a" class))
                                                 ,@(opt-attr-list title)) ,@body))]
-                               [(body) body])])))))
+                               [(body) body]
+                               [else   substitute])])))))
 
 ; Patterns ---------------------------------------
 
@@ -155,11 +158,11 @@
  [controller-url     (->* (controller?) () #:rest any/c (or/c string? #f))]
  [controller-link    (->* (controller?)
                           (#:body (or/c xml+quotable? pair? null? #f)
-                                  #:id        (or/c symbol? string? #f)
-                                  #:class     (or/c symbol? string? #f)
-                                  #:classes   (listof (or/c symbol? string?))
-                                  #:title     (or/c string? #f)
-                                  #:format    (cut enum-value? link-formats     <>)
-                                  #:no-access (cut enum-value? link-substitutes <>))
+                                  #:id      (or/c symbol? string? #f)
+                                  #:class   (or/c symbol? string? #f)
+                                  #:classes (listof (or/c symbol? string?))
+                                  #:title   (or/c string? #f)
+                                  #:format  (enum-value/c link-formats)
+                                  #:else    any/c)
                           #:rest any/c
                           any)])

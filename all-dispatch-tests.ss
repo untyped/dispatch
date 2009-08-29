@@ -123,7 +123,7 @@
         (check-equal? sexps null)))
     
     (test-case "controller-link : no access : span"
-      (let* ([link-ref (cut controller-link divide-numbers (test-request "foo") 8 0 #:no-access 'span #:id 'id #:class 'class #:title "title")]
+      (let* ([link-ref (cut controller-link divide-numbers (test-request "foo") 8 0 #:else 'span #:id 'id #:class 'class #:title "title")]
              [mirrors  (link-ref)]
              [sexp     (parameterize ([current-link-format 'sexp]) (link-ref))]
              [sexps    (parameterize ([current-link-format 'sexps]) (link-ref))])
@@ -133,7 +133,7 @@
         (check-equal? sexps '((span ([id "id"] [class "no-access-link class"] [title "title"]) "/divide/8/0")))))
     
     (test-case "controller-link : no access : body"
-      (let* ([link-ref (cut controller-link divide-numbers (test-request "foo") 8 0 #:no-access 'body)]
+      (let* ([link-ref (cut controller-link divide-numbers (test-request "foo") 8 0 #:else 'body)]
              [mirrors  (link-ref)]
              [sexp     (parameterize ([current-link-format 'sexp]) (link-ref))]
              [sexps    (parameterize ([current-link-format 'sexps]) (link-ref))])
