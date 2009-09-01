@@ -57,7 +57,7 @@
                         #f
                         (lambda (controller . args) (apply (default-controller-wrapper) controller args))
                         (lambda args (apply (default-controller-undefined-responder) controller args))
-                        (lambda args (apply (default-access-predicate) controller args))
+                        (lambda args (apply (default-access-procedure) controller args))
                         (lambda args (apply (default-access-denied-responder) controller args))
                         requestless?)])
     controller))
@@ -94,7 +94,7 @@
 
 ; (parameter (any ... -> boolean))
 ; Initialised in response.ss.
-(define default-access-predicate
+(define default-access-procedure
   (make-parameter (lambda _ #t)))
 
 ; (parameter (controller any ... -> response))
@@ -156,6 +156,6 @@
  [default-link-substitute                (parameter/c (enum-value/c link-substitutes))]
  [plain-controller-wrapper               (->* (controller?) () #:rest any/c any)]
  [default-controller-wrapper             (parameter/c procedure?)]
- [default-access-predicate               (parameter/c procedure?)]
+ [default-access-procedure               (parameter/c procedure?)]
  [default-access-denied-responder        (parameter/c procedure?)]
  [default-controller-undefined-responder (parameter/c procedure?)])

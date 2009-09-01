@@ -22,7 +22,7 @@
          
          plain-controller-wrapper
          default-controller-wrapper
-         default-access-predicate
+         default-access-procedure
          default-controller-undefined-responder
          default-access-denied-responder
          
