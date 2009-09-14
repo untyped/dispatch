@@ -4,7 +4,7 @@
 
 (require srfi/19
          (mirrors-in)
-         (unlib-in enumeration time)
+         (unlib-in time)
          "main.ss")
 
 ; Test data --------------------------------------

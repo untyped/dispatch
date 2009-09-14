@@ -5,7 +5,7 @@
 (require net/uri-codec
          scheme/string
          srfi/19
-         (unlib-in enumeration time)
+         (unlib-in time)
          "core.ss")
 
 ; -> arg

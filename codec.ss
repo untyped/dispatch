@@ -48,52 +48,52 @@
          #:format  [link-format (default-link-format)]
          #:else    [substitute  (default-link-substitute)]
          . args)
-  (begin0 (let* ([requestless? (controller-requestless?  controller)]
-                 [access?      (apply controller-access? controller args)]
-                 [href         (if (controller-requestless? controller)
-                                   (apply controller-url controller args)
-                                   (apply controller-url controller (cdr args)))]
-                 [body         (cond [body body]
-                                     [(eq? link-format 'sexps) (list href)]
-                                     [else href])]
-                 [id           (and id (string+symbol->string id))]
-                 [class        (and (pair? classes) (string-join (map string+symbol->string classes) " "))])
-            (if access?
-                (enum-case link-formats link-format
-                  [(mirrors) (xml (a (@ [href ,href]
-                                        ,(opt-xml-attr id)
-                                        ,(opt-xml-attr class)
-                                        ,(opt-xml-attr title)) ,body))]
-                  [(sexp)    `(a ([href ,href]
-                                  ,@(opt-attr-list id)
-                                  ,@(opt-attr-list class)
-                                  ,@(opt-attr-list title)) ,body)]
-                  [(sexps)   `((a ([href ,href]
-                                   ,@(opt-attr-list id)
-                                   ,@(opt-attr-list class)
-                                   ,@(opt-attr-list title)) ,@body))])
-                (enum-case link-formats link-format
-                  [(mirrors) (enum-case link-substitutes substitute
-                               [(hide) (xml)]
-                               [(span) (xml (span (@ ,(opt-xml-attr id)
-                                                     ,(opt-xml-attr class class (format "no-access-link ~a" class))
-                                                     ,(opt-xml-attr title)) ,body))]
-                               [(body) (xml ,body)]
-                               [else   substitute])]
-                  [(sexp)    (enum-case link-substitutes substitute
-                               [(hide) '(span)]
-                               [(span) `(span (,@(opt-attr-list id)
-                                               ,@(opt-attr-list class class (format "no-access-link ~a" class))
-                                               ,@(opt-attr-list title)) ,body)]
-                               [(body) body]
-                               [else   substitute])]
-                  [(sexps)   (enum-case link-substitutes substitute
-                               [(hide) null]
-                               [(span) `((span (,@(opt-attr-list id)
-                                                ,@(opt-attr-list class class (format "no-access-link ~a" class))
-                                                ,@(opt-attr-list title)) ,@body))]
-                               [(body) body]
-                               [else   substitute])])))))
+  (let* ([requestless? (controller-requestless?  controller)]
+         [access?      (apply controller-access? controller args)]
+         [href         (if (controller-requestless? controller)
+                           (apply controller-url controller args)
+                           (apply controller-url controller (cdr args)))]
+         [body         (cond [body body]
+                             [(eq? link-format 'sexps) (list href)]
+                             [else href])]
+         [id           (and id (string+symbol->string id))]
+         [class        (and (pair? classes) (string-join (map string+symbol->string classes) " "))])
+    (if access?
+        (enum-case link-formats link-format
+          [(mirrors) (xml (a (@ [href ,href]
+                                ,(opt-xml-attr id)
+                                ,(opt-xml-attr class)
+                                ,(opt-xml-attr title)) ,body))]
+          [(sexp)    `(a ([href ,href]
+                          ,@(opt-attr-list id)
+                          ,@(opt-attr-list class)
+                          ,@(opt-attr-list title)) ,body)]
+          [(sexps)   `((a ([href ,href]
+                           ,@(opt-attr-list id)
+                           ,@(opt-attr-list class)
+                           ,@(opt-attr-list title)) ,@body))])
+        (enum-case link-formats link-format
+          [(mirrors) (enum-case link-substitutes substitute
+                       [(hide) (xml)]
+                       [(span) (xml (span (@ ,(opt-xml-attr id)
+                                             ,(opt-xml-attr class class (format "no-access-link ~a" class))
+                                             ,(opt-xml-attr title)) ,body))]
+                       [(body) (xml ,body)]
+                       [else   substitute])]
+          [(sexp)    (enum-case link-substitutes substitute
+                       [(hide) '(span)]
+                       [(span) `(span (,@(opt-attr-list id)
+                                       ,@(opt-attr-list class class (format "no-access-link ~a" class))
+                                       ,@(opt-attr-list title)) ,body)]
+                       [(body) body]
+                       [else   substitute])]
+          [(sexps)   (enum-case link-substitutes substitute
+                       [(hide) null]
+                       [(span) `((span (,@(opt-attr-list id)
+                                        ,@(opt-attr-list class class (format "no-access-link ~a" class))
+                                        ,@(opt-attr-list title)) ,@body))]
+                       [(body) body]
+                       [else   substitute])]))))
 
 ; Patterns ---------------------------------------
 

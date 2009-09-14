@@ -5,7 +5,7 @@
 (require scheme/list
          scheme/string
          (mirrors-in)
-         (unlib-in enumeration string))
+         (unlib-in string))
 
 ; Struct types -----------------------------------
 
