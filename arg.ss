@@ -64,7 +64,7 @@
          (raise-type-error 'symbol-arg "symbol" arg)))))
 
 
-(define (time-utc-arg fmt)
+(define (time-utc-arg [fmt (current-time-format)])
   (make-arg
    "[^/]+"
    (lambda (raw)
@@ -117,6 +117,6 @@
  [number-arg   (-> arg?)]
  [string-arg   (-> arg?)]
  [symbol-arg   (-> arg?)]
- [time-utc-arg (-> string? arg?)]
+ [time-utc-arg (->* () (string?) arg?)]
  [rest-arg     (-> arg?)]
  [enum-arg     (-> enum? arg?)])
