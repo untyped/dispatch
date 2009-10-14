@@ -19,7 +19,12 @@
 
 ; controller any ... -> boolean
 (define (controller-access? controller . args)
-  (apply (controller-access-proc controller) args))
+  (let ([ans (apply (controller-access-proc controller) args)])
+    (unless (boolean? ans)
+      (printf "Warning: access predicate for ~a returned non-boolean value: ~s"
+              (controller-id controller)
+              ans))
+    (and ans #t)))
 
 ; controller any ... -> string
 (define (controller-url controller . args)
@@ -45,14 +50,18 @@
          #:class   [class       #f]
          #:classes [classes     (if class (list class) null)]
          #:title   [title       #f]
+         #:anchor  [anchor      #f]
          #:format  [link-format (default-link-format)]
          #:else    [substitute  (default-link-substitute)]
          . args)
   (let* ([requestless? (controller-requestless?  controller)]
          [access?      (apply controller-access? controller args)]
-         [href         (if (controller-requestless? controller)
+         [plain–href   (if (controller-requestless? controller)
                            (apply controller-url controller args)
                            (apply controller-url controller (cdr args)))]
+         [href         (if anchor
+                           (format "~a#~a" plain–href anchor)
+                           plain–href)]
          [body         (cond [body body]
                              [(eq? link-format 'sexps) (list href)]
                              [else href])]
@@ -163,6 +172,7 @@
                                   #:classes (listof (or/c symbol? string?))
                                   #:title   (or/c string? #f)
                                   #:format  (enum-value/c link-formats)
+                                  #:anchor  (or/c string? #f)
                                   #:else    any/c)
                           #:rest any/c
                           any)])

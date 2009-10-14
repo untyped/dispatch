@@ -46,4 +46,5 @@
          number-arg
          string-arg
          symbol-arg
-         enum-arg)
+         enum-arg
+         rest-arg)

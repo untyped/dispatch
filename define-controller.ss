@@ -37,6 +37,9 @@
       [(#:requestless? val other ...)
        (begin (set! requestless-stx #'val)
               (parse-keywords #'(other ...)))]
+      [(kw other ...)
+       (keyword? (syntax->datum #'kw))
+       (raise-syntax-error #f "unrecognised define-controller keyword" complete-stx #'kw)]
       [rest   (parse-body #'rest)]))
   
   (define (parse-body body-stx)
