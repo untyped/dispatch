@@ -83,9 +83,16 @@
 
 ; controller any ... -> any
 (define (plain-controller-wrapper controller . args)
-  (if (apply (controller-access-proc controller) args)
-      (apply (controller-body-proc controller) args)
-      (apply (controller-access-denied-proc controller) args)))
+  (with-handlers ([exn:fail:no-access?
+                   (lambda (exn)
+                     (apply (controller-access-denied-proc controller) args))])
+    (dynamic-wind
+     (lambda ()
+       (unless (apply (controller-access-proc controller) args)
+         (raise-exn exn:fail:no-access "Access denied.")))
+     (lambda ()
+       (apply (controller-body-proc controller) args))
+     void)))
 
 ; (parameter ((any ... -> any) any ... -> any))
 ; Initialised in response.ss.
@@ -124,6 +131,8 @@
                         (if (procedure? part)
                             (part)
                             part)))))))
+
+(define-struct (exn:fail:no-access exn:fail) () #:transparent)
 
 ; Provide statements -----------------------------
 
