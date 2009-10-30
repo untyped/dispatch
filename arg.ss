@@ -63,6 +63,16 @@
          (uri-encode (symbol->string arg))
          (raise-type-error 'symbol-arg "symbol" arg)))))
 
+; -> arg
+(define (url-arg)
+  (make-arg 
+   "[^/]+"
+   (lambda (raw)
+     (string->url (uri-decode raw)))
+   (lambda (arg)
+     (cond [(string? arg) (uri-encode arg)]
+           [(url? arg)    (uri-encode (url->string arg))]
+           [else          (raise-type-error 'string-arg "string" arg)]))))
 
 (define (time-utc-arg [fmt (current-time-format)])
   (make-arg
@@ -117,6 +127,7 @@
  [number-arg   (-> arg?)]
  [string-arg   (-> arg?)]
  [symbol-arg   (-> arg?)]
+ [url-arg      (-> arg?)]
  [time-utc-arg (->* () (string?) arg?)]
  [rest-arg     (-> arg?)]
  [enum-arg     (-> enum? arg?)])

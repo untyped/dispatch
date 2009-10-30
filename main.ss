@@ -46,5 +46,6 @@
          number-arg
          string-arg
          symbol-arg
+         url-arg
          enum-arg
          rest-arg)

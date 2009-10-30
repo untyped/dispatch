@@ -2,13 +2,17 @@
 
 (require "test-base.ss")
 
-(require srfi/19
+(require net/uri-codec
+         srfi/19
          (mirrors-in)
          (unlib-in time)
          "main.ss")
 
 (require/expose web-server/dispatchers/dispatch
   (exn:dispatcher?))
+
+(require/expose "codec.ss"
+  (clean-request-url))
 
 ; Test data --------------------------------------
 
@@ -45,6 +49,10 @@
 ; Tests ------------------------------------------
 
 (define/provide-test-suite codec-tests
+  
+  (test-equal? "clean-request-url"
+    (clean-request-url (test-request (format "/~a/~a/" (uri-encode "a/b") (uri-encode "c?d"))))
+    (format "/~a/~a/" (uri-encode "a/b") (uri-encode "c?d")))
   
   (test-case "site-dispatch : divide-numbers"
     (check-equal? (site-dispatch math (test-request "/divide/8/2")) 4)

@@ -13,10 +13,12 @@
 
 (define-site args
   ([("/bool/" (boolean-arg))           test-bool]
+   [("/url/"  (url-arg))               test-url]
    [("/time/" (time-utc-arg "~Y~m~d")) test-time]
    [("/enum/" (enum-arg options))      test-enum]))
 
 (define-controller (test-bool request arg) arg)
+(define-controller (test-url  request arg) arg)
 (define-controller (test-time request arg) arg)
 (define-controller (test-enum request arg) arg)
 
@@ -35,6 +37,11 @@
     (check-equal? (site-dispatch args (test-request "/bool/0"))     #f)
     (check-equal? (controller-url test-bool #t) "/bool/yes")
     (check-equal? (controller-url test-bool #f) "/bool/no"))
+  
+  (test-case "url-arg"
+    (check-equal? (url->string (site-dispatch args (test-request "/url/%2Fa-url"))) "/a-url")
+    (check-equal? (controller-url test-url (string->url "/a-url")) "/url/%2Fa-url")
+    (check-equal? (controller-url test-url "/a-url") "/url/%2Fa-url"))
   
   (test-case "time-utc-arg"
     (check-equal? (site-dispatch args (test-request "/time/20090102"))

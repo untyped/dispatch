@@ -2,7 +2,8 @@
 
 (require "base.ss")
 
-(require (only-in srfi/13 string-join)
+(require net/uri-codec
+         (only-in srfi/13 string-join)
          "core.ss")
 
 ; Accessors --------------------------------------
@@ -115,14 +116,15 @@
 
 ; pattern string -> (U list #f)
 (define (pattern-decode pattern url-string)
-  (let* ([regexp  ((pattern-regexp-maker pattern))]
-         [matches (regexp-match regexp url-string)]
-         [decoded (and matches
-                       (= (length (cdr matches)) 
-                          (length (pattern-args pattern)))
-                       (for/list ([arg   (in-list (pattern-args pattern))]
-                                  [match (in-list (cdr matches))])
-                         ((arg-decoder arg) match)))])
+  (let* ([url-string url-string]
+         [regexp     ((pattern-regexp-maker pattern))]
+         [matches    (regexp-match regexp url-string)]
+         [decoded    (and matches
+                          (= (length (cdr matches)) 
+                             (length (pattern-args pattern)))
+                          (for/list ([arg   (in-list (pattern-args pattern))]
+                                     [match (in-list (cdr matches))])
+                            ((arg-decoder arg) match)))])
     decoded))
 
 ; pattern list -> (U string #f)
@@ -142,7 +144,9 @@
 
 ; request -> string
 (define (clean-request-url request)
-  (string-append "/" (string-join (map path/param-path (url-path (request-uri request))) "/")))
+  (string-append "/" (string-join (map (compose uri-encode path/param-path)
+                                       (url-path (request-uri request)))
+                                  "/")))
 
 ; (_ id)
 ; (_ boolean-expr id)
