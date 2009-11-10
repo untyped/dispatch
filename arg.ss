@@ -87,15 +87,17 @@
          (date->string (time-utc->date time) fmt)
          (raise-type-error 'time-utc-arg "time-utc" time)))))
 
-; -> arg
-(define (rest-arg)
+; [natural] -> arg
+(define (rest-arg [min-length 0])
   (make-arg
-   ".*"
+   (if (zero? min-length)
+       ".*"
+       (format ".{~a,}.*" min-length))
    (lambda (raw)
      (uri-decode raw))
    (lambda (arg)
      (if (string? arg)
-         (uri-encode arg)
+         (regexp-replace* "%2F" (uri-encode arg) "/")
          (raise-type-error 'rest-arg "string" arg)))))
 
 ; enum -> arg
@@ -129,5 +131,5 @@
  [symbol-arg   (-> arg?)]
  [url-arg      (-> arg?)]
  [time-utc-arg (->* () (string?) arg?)]
- [rest-arg     (-> arg?)]
+ [rest-arg     (->* () (natural-number/c) arg?)]
  [enum-arg     (-> enum? arg?)])

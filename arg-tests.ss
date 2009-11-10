@@ -15,12 +15,14 @@
   ([("/bool/" (boolean-arg))           test-bool]
    [("/url/"  (url-arg))               test-url]
    [("/time/" (time-utc-arg "~Y~m~d")) test-time]
-   [("/enum/" (enum-arg options))      test-enum]))
+   [("/enum/" (enum-arg options))      test-enum]
+   [("/rest"  (rest-arg 1))            test-rest]))
 
 (define-controller (test-bool request arg) arg)
 (define-controller (test-url  request arg) arg)
 (define-controller (test-time request arg) arg)
 (define-controller (test-enum request arg) arg)
+(define-controller (test-rest request arg) arg)
 
 ; Tests ------------------------------------------
 
@@ -57,4 +59,15 @@
         (check-equal? (site-dispatch args (test-request "/enum/c")) 'c)
         (check-equal? (controller-url test-enum 'a) "/enum/a")
         (check-equal? (controller-url test-enum 'b) "/enum/b")
-        (check-equal? (controller-url test-enum 'c) "/enum/c")))))
+        (check-equal? (controller-url test-enum 'c) "/enum/c"))))
+  
+  (test-case "rest-arg"
+    (check-equal? (site-dispatch args (test-request "/rest/a")) "/a")
+    (check-equal? (site-dispatch args (test-request "/rest%2Fa")) "/a")
+    (check-equal? (site-dispatch args (test-request "/rest/a/b/c")) "/a/b/c")
+    (check-equal? (site-dispatch args (test-request "/rest/a/b/c?d=e")) "/a/b/c")
+    (check-equal? (site-dispatch args (test-request "/rest/a/b/c#d")) "/a/b/c")
+    (check-equal? (site-dispatch args (test-request "/rest/a;x/b;y/c;z")) "/a/b/c")
+    (check-equal? (controller-url test-rest "/a") "/rest/a")
+    (check-equal? (controller-url test-rest "%2Fa") "/rest%252Fa")
+    (check-equal? (controller-url test-rest "/a/b/c") "/rest/a/b/c")))
