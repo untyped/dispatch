@@ -97,7 +97,7 @@
      (uri-decode raw))
    (lambda (arg)
      (if (string? arg)
-         (regexp-replace* "%2F" (uri-encode arg) "/")
+         (uri-encode arg)
          (raise-type-error 'rest-arg "string" arg)))))
 
 ; enum -> arg

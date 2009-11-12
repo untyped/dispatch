@@ -68,6 +68,6 @@
     (check-equal? (site-dispatch args (test-request "/rest/a/b/c?d=e")) "/a/b/c")
     (check-equal? (site-dispatch args (test-request "/rest/a/b/c#d")) "/a/b/c")
     (check-equal? (site-dispatch args (test-request "/rest/a;x/b;y/c;z")) "/a/b/c")
-    (check-equal? (controller-url test-rest "/a") "/rest/a")
+    (check-equal? (controller-url test-rest "/a") "/rest%2Fa")
     (check-equal? (controller-url test-rest "%2Fa") "/rest%252Fa")
-    (check-equal? (controller-url test-rest "/a/b/c") "/rest/a/b/c")))
+    (check-equal? (controller-url test-rest "/a/b/c") "/rest%2Fa%2Fb%2Fc")))
