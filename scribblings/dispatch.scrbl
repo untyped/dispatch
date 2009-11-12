@@ -30,9 +30,9 @@ Dispatch makes it very easy to create this kind of configuration using code like
 
 @schemeblock[
   (define-site blog
-    ([("") list-posts]
-     [("/posts/" (string-arg)) review-post]
-     [("/archive/" (integer-arg) "/" (integer-arg))
+    ([(url "") list-posts]
+     [(url "/posts/" (string-arg)) review-post]
+     [(url "/archive/" (integer-arg) "/" (integer-arg))
       review-archive]))
   
   (code:comment "request -> response")  
@@ -61,17 +61,6 @@ applied to @scheme[display-archive] from the example above would construct and r
 The @scheme[define-site] macro binds identifiers for the site and all its controllers. @scheme[define-controller] mutates the controllers defined by @scheme[define-site] so that they contain the relevant controller bindings.
 
 This separation of interface and implementation means that there is a simple way of accessing all your controllers from anywhere in your application, without having to worry about cyclic module dependencies. Simply place the @scheme[define-site] statement in a central configuration module (conventionally named @scheme{site.ss}) and require this module from all other modules in the application to gain access to your controllers. As long as the various @scheme[define-controller] statements are executed once when the application is started, the majority of the application only needs to know about @scheme{site.ss}.
-
-@subsection{Simple access control (new in Dispatch 3)}
-
-Dispatch makes it easy to limit access to controllers, for security or to prevent errors. As a contrived example, consider the following controller:
-
-@schemeblock[
-  (define-controller (passcode a b c)
-    #:access? (and (= a 1) (= b 2) (= c 3))
-    '(html (body "You guessed the combination!")))]
-
-Dispatch's @scheme[#:access] clause lets you specify when a user is and isn't allowed access to the controller. In this instance, if @scheme[a], @scheme[b] and @scheme[c] are @scheme[1], @scheme[2] and @scheme[3] respectively, the access expression returns a non-@scheme[#f] value and user is allowed in. Any other combination of values causes the access expression to return @scheme[#f], which causes the controller to raise an @scheme[exn:dispatch:security].
 
 @section[#:tag "quick"]{Quick Start}
 
