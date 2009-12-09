@@ -4,6 +4,7 @@
 
 ; Library aliases ------------------------------
 
+(define-library-aliases cce-scheme (planet cce/scheme:6)            #:provide)
 (define-library-aliases mirrors    (planet untyped/mirrors:2)       #:provide)
 (define-library-aliases unlib      (planet untyped/unlib:3)         #:provide)
 (define-library-aliases schemeunit (planet schematics/schemeunit:3) #:provide)

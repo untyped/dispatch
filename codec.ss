@@ -20,12 +20,17 @@
 
 ; controller any ... -> boolean
 (define (controller-access? controller . args)
-  (let ([ans (apply (controller-access-proc controller) args)])
-    (unless (boolean? ans)
-      (printf "Warning: access predicate for ~a returned non-boolean value: ~s"
-              (controller-id controller)
-              ans))
-    (and ans #t)))
+  (with-handlers ([exn? (lambda (exn)
+                          (raise (make-exn:fail (format "error determining access for ~s:~n~a"
+                                                        (cons (controller-id controller) args)
+                                                        (exn-message exn))
+                                                (exn-continuation-marks exn))))])
+    (let ([ans (apply (controller-access-proc controller) args)])
+      (unless (boolean? ans)
+        (printf "Warning: access predicate for ~a returned non-boolean value: ~s"
+                (controller-id controller)
+                ans))
+      (and ans #t))))
 
 ; controller any ... -> string
 (define (controller-url controller . args)

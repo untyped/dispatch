@@ -5,11 +5,13 @@
          "base.ss"
          (for-template scheme/base))
 
-(require (for-syntax (unlib-in syntax))
+(require (for-syntax (cce-scheme-in syntax)
+                     (unlib-in syntax))
          "core.ss")
 
 (define-syntax (define-controller complete-stx)
   
+  (define procedure-style?  #f)
   (define id-stx           #f)
   (define args-stx         #f)
   (define rest-stx         #f)
@@ -24,10 +26,13 @@
        (begin (set! wrapper-proc-stx #'proc)
               (parse-keywords #'(other ...)))]
       [(#:access? expr other ...)
-       (begin (set! access-proc-stx
-                    (with-syntax ([(arg ...) args-stx])
-                      #'(lambda (arg ...) expr)))
-              (parse-keywords #'(other ...)))]
+       (if procedure-style?
+           (begin (set! access-proc-stx
+                        (with-syntax ([(arg ...) args-stx])
+                          #'(lambda (arg ...) expr)))
+                  (parse-keywords #'(other ...)))
+           (raise-syntax-error #f "#:access? keyword only allowed in procedure-style controller definitions"
+                               complete-stx #'(#:access? expr)))]
       [(#:access-proc proc other ...)
        (begin (set! access-proc-stx #'proc)
               (parse-keywords #'(other ...)))]
@@ -39,24 +44,34 @@
               (parse-keywords #'(other ...)))]
       [(kw other ...)
        (keyword? (syntax->datum #'kw))
-       (raise-syntax-error #f "unrecognised define-controller keyword" complete-stx #'kw)]
-      [rest   (parse-body #'rest)]))
+       (raise-syntax-error #f "unrecognised define-controller keyword"
+                           complete-stx #'kw)]
+      [(rest) (parse-body #'(rest))]
+      [()     (raise-syntax-error #f "no controller body specified" complete-stx)]
+      [rest   (if procedure-style?
+                  (parse-body #'rest)
+                  (raise-syntax-error #f "too many body expressions for non-procedure-style controller definition"
+                                      complete-stx #'rest))]))
   
   (define (parse-body body-stx)
-    (with-syntax ([id             id-stx]
-                  [(arg ...)      args-stx]
-                  [(expr ...)     body-stx]
-                  [body-id        (make-id id-stx id-stx '-body)]
-                  [access-id      (make-id id-stx id-stx '-access?)]
-                  [denied-id      (make-id id-stx id-stx '-access-denied)]
-                  [wrapper-id     (make-id id-stx id-stx '-wrapper)]
-                  [requestless-id (make-id id-stx id-stx '-requestless?)]
-                  [wrapper-proc   wrapper-proc-stx]
-                  [access-proc    access-proc-stx]
-                  [denied-proc    denied-proc-stx]
-                  [requestless?   requestless-stx])
+    (with-syntax* ([id             id-stx]
+                   [(arg ...)      args-stx]
+                   [body           (if procedure-style?
+                                       (quasisyntax/loc complete-stx
+                                         (lambda (arg ...) #,@body-stx))
+                                       (car (syntax->list body-stx)))]
+                   [body-id        (make-id id-stx id-stx '-body)]
+                   [access-id      (make-id id-stx id-stx '-access?)]
+                   [denied-id      (make-id id-stx id-stx '-access-denied)]
+                   [wrapper-id     (make-id id-stx id-stx '-wrapper)]
+                   [requestless-id (make-id id-stx id-stx '-requestless?)]
+                   [wrapper-proc   wrapper-proc-stx]
+                   [access-proc    access-proc-stx]
+                   [denied-proc    denied-proc-stx]
+                   [requestless?   requestless-stx])
+            
       (quasisyntax/loc complete-stx
-        (let ([body-id        (lambda (arg ...) expr ...)]
+        (let ([body-id        body]
               [wrapper-id     wrapper-proc]
               [access-id      access-proc]
               [denied-id      denied-proc]
@@ -74,8 +89,15 @@
   (syntax-case complete-stx ()
     [(_ (id arg ...) keyword+expr ...)
      (identifier? #'id)
-     (begin (set! id-stx      #'id)
+     (begin (set! procedure-style? #t)
+            (set! id-stx      #'id)
             (set! args-stx    #'(arg ...))
+            (parse-keywords   #'(keyword+expr ...)))]
+    [(_ id keyword+expr ...)
+     (identifier? #'id)
+     (begin (set! procedure-style? #f)
+            (set! id-stx      #'id)
+            (set! args-stx    null)
             (parse-keywords   #'(keyword+expr ...)))]))
 
 ; Provide statements -----------------------------
