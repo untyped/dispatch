@@ -44,6 +44,7 @@
 ;  [#:id      (U string symbol #f)]
 ;  [#:class   (U string symbol #f)]
 ;  [#:classes (listof (U string symbol))]
+;  [#:target  (U string #f)]
 ;  [#:title   (U string #f)]
 ;  [#:format  link-format]
 ;  [#:else    (U link-substitute html)]
@@ -56,6 +57,7 @@
          #:class   [class       #f]
          #:classes [classes     (if class (list class) null)]
          #:title   [title       #f]
+         #:target  [target      #f]
          #:anchor  [anchor      #f]
          #:format  [link-format (default-link-format)]
          #:else    [substitute  (default-link-substitute)]
@@ -78,14 +80,17 @@
           [(mirrors) (xml (a (@ [href ,href]
                                 ,(opt-xml-attr id)
                                 ,(opt-xml-attr class)
+                                ,(opt-xml-attr target)
                                 ,(opt-xml-attr title)) ,body))]
           [(sexp)    `(a ([href ,href]
                           ,@(opt-attr-list id)
                           ,@(opt-attr-list class)
+                          ,@(opt-attr-list target)
                           ,@(opt-attr-list title)) ,body)]
           [(sexps)   `((a ([href ,href]
                            ,@(opt-attr-list id)
                            ,@(opt-attr-list class)
+                           ,@(opt-attr-list target)
                            ,@(opt-attr-list title)) ,@body))])
         (enum-case link-formats link-format
           [(mirrors) (enum-case link-substitutes substitute
@@ -179,6 +184,7 @@
                                   #:id      (or/c symbol? string? #f)
                                   #:class   (or/c symbol? string? #f)
                                   #:classes (listof (or/c symbol? string?))
+                                  #:target  (or/c string? #f)
                                   #:title   (or/c string? #f)
                                   #:format  (enum-value/c link-formats)
                                   #:anchor  (or/c string? #f)

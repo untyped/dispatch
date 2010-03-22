@@ -114,17 +114,18 @@
                        (controller-link
                         divide-numbers
                         (test-request "foo") 8 4
-                        #:id    'id
-                        #:class 'class
-                        #:title "title"
-                        #:body  body))]
+                        #:id     'id
+                        #:class  'class
+                        #:target "_new"
+                        #:title  "title"
+                        #:body   body))]
            [mirrors  (link-ref "body")]
            [sexp     (parameterize ([default-link-format 'sexp]) (link-ref "body"))]
            [sexps    (parameterize ([default-link-format 'sexps]) (link-ref '("body")))])
       (check-pred xml? mirrors)
-      (check-equal? (xml->string mirrors) "<a href=\"/divide/8/4\" id=\"id\" class=\"class\" title=\"title\">body</a>")
-      (check-equal? sexp  '(a ([href "/divide/8/4"] [id "id"] [class "class"] [title "title"]) "body"))
-      (check-equal? sexps '((a ([href "/divide/8/4"] [id "id"] [class "class"] [title "title"]) "body")))))
+      (check-equal? (xml->string mirrors) "<a href=\"/divide/8/4\" id=\"id\" class=\"class\" target=\"_new\" title=\"title\">body</a>")
+      (check-equal? sexp  '(a ([href "/divide/8/4"] [id "id"] [class "class"] [target "_new"] [title "title"]) "body"))
+      (check-equal? sexps '((a ([href "/divide/8/4"] [id "id"] [class "class"] [target "_new"] [title "title"]) "body")))))
   
   (test-case "controller-link : no access : hide"
     (let* ([link-ref (cut controller-link divide-numbers (test-request "foo") 8 0 #:else 'hide)]
