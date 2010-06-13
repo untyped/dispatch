@@ -4,8 +4,7 @@
 
 (require net/uri-codec
          scheme/string
-         srfi/19
-         (unlib-in time)
+         (unlib-in date)
          "core.ss")
 
 ; -> arg
@@ -74,17 +73,17 @@
            [(url? arg)    (uri-encode (url->string arg))]
            [else          (raise-type-error 'string-arg "string" arg)]))))
 
-(define (time-utc-arg [fmt (current-time-format)])
+(define (time-utc-arg [fmt (current-time-format)] #:tz-ref [tz-ref (lambda _ "GMT")])
   (make-arg
    "[^/]+"
    (lambda (raw)
-     (let ([date (safe-string->date raw fmt)])
+     (let ([date (safe-string->date raw fmt #:tz (tz-ref))])
        (if date 
            (date->time-utc date)
            (raise-exn exn:dispatch "no match for date-arg"))))
    (lambda (time)
      (if (time-utc? time)
-         (date->string (time-utc->date time) fmt)
+         (date->string (time-utc->date time #:tz (tz-ref)) fmt #:tz (tz-ref))
          (raise-type-error 'time-utc-arg "time-utc" time)))))
 
 ; [natural] -> arg
@@ -117,9 +116,9 @@
 
 ; Helpers ----------------------------------------
 
-(define (safe-string->date str fmt)
+(define (safe-string->date str fmt #:tz tz)
   (with-handlers ([exn? (lambda _ #f)])
-    (string->date str fmt)))
+    (string->date str fmt #:tz tz)))
 
 ; Provide statements -----------------------------
 
@@ -130,6 +129,6 @@
  [string-arg   (-> arg?)]
  [symbol-arg   (-> arg?)]
  [url-arg      (-> arg?)]
- [time-utc-arg (->* () (string?) arg?)]
+ [time-utc-arg (->* () (string? #:tz-ref (-> string?)) arg?)]
  [rest-arg     (->* () (natural-number/c) arg?)]
  [enum-arg     (-> enum? arg?)])

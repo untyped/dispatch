@@ -12,11 +12,11 @@
 (define-enum options (a b c))
 
 (define-site args
-  ([("/bool/" (boolean-arg))           test-bool]
-   [("/url/"  (url-arg))               test-url]
-   [("/time/" (time-utc-arg "~Y~m~d")) test-time]
-   [("/enum/" (enum-arg options))      test-enum]
-   [("/rest"  (rest-arg 1))            test-rest]))
+  ([("/bool/" (boolean-arg))                 test-bool]
+   [("/url/"  (url-arg))                     test-url]
+   [("/time/" (time-utc-arg "~Y~m~d~H~M~S")) test-time]
+   [("/enum/" (enum-arg options))            test-enum]
+   [("/rest"  (rest-arg 1))                  test-rest]))
 
 (define-controller (test-bool request arg) arg)
 (define-controller (test-url  request arg) arg)
@@ -46,10 +46,14 @@
     (check-equal? (controller-url test-url "/a-url") "/url/%2Fa-url"))
   
   (test-case "time-utc-arg"
-    (check-equal? (site-dispatch args (test-request "/time/20090102"))
-                  (date->time-utc (make-date 0 0 0 0 2 1 2009 (current-time-zone-offset))))
-    (check-equal? (controller-url test-time (date->time-utc (make-date 0 0 0 0 2 1 2009 (current-time-zone-offset))))
-                  "/time/20090102"))
+    ; By default, time-utc-arg should always serialize times in GMT.
+    ; url -> scheme:
+    (check-equal? (site-dispatch args (test-request "/time/20100328010000")) (date->time-utc (make-date 0 00 00 01 28 03 2010    0))) ; winter time
+    (check-equal? (site-dispatch args (test-request "/time/20100328020000")) (date->time-utc (make-date 0 00 00 02 28 03 2010    0))) ; summer time
+    ; scheme -> url:
+    (check-equal? (controller-url test-time (date->time-utc (make-date 0 00 00 00 28 03 2010    0))) "/time/20100328000000")  ; winter time
+    (check-equal? (controller-url test-time (date->time-utc (make-date 0 00 00 01 28 03 2010 3600))) "/time/20100328000000")  ; summer time
+    (check-equal? (controller-url test-time (date->time-utc (make-date 0 00 00 01 28 03 2010    0))) "/time/20100328010000")) ; incorrect time zone
   
   (test-case "enum-arg"
     (check-not-exn
