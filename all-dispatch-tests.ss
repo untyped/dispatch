@@ -2,18 +2,13 @@
 
 (require "test-base.ss")
 
-(require "dispatch-test.ss"
-         "pipeline-test.ss"
-         "struct-test.ss"
-         "syntax-test.ss")
+(require "arg-tests.ss"
+         "codec-tests.ss"
+         "requestless-tests.ss")
 
-(define all-dispatch-tests
-  (test-suite "dispatch"
-    struct-tests
-    dispatch-tests
-    syntax-tests
-    pipeline-tests))
+; Tests ------------------------------------------
 
-; Provide statements -----------------------------
-
-(provide all-dispatch-tests)
+(define/provide-test-suite all-dispatch-tests
+  arg-tests
+  codec-tests
+  requestless-tests)

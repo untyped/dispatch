@@ -7,8 +7,12 @@
 
 (define release-notes
   '((p "Changes and additions:")
-    (ul (li "evaluation of strings in URL patterns can now be deffered to request handling time by wrapping them in thunks;")
-        (li "fixed typo in the docs."))))
+    (ul (li "new syntaxes for " (tt "define-site") " and " (tt "define-controller") ";")
+        (li "tools for restricting access to controllers;")
+        (li "tools for creating hyperlinks between controllers;")
+        (li "runtime (re)configuration of URLs;")
+        (li "dropped pipelines in favour of simpler wrapper procedures;")
+        (li "Mirrors support."))))
 
 (define categories '(net devtools))
 
