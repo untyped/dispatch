@@ -3,7 +3,7 @@
 (define name "Dispatch")
 
 (define blurb
-  '((p "A tool for configuring controller procedures in web applications.")))
+  '((p "Bidirectional mapping between web application URLs and controller procedures.")))
 
 (define release-notes
   '((p "Changes and additions:")
