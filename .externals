@@ -3,10 +3,10 @@ scm = svn
 
 [planetdev/unlib]
 path = planetdev/unlib
-repository = http://svn.untyped.com/unlib/trunk/src
-scm = svn
+repository = git://github.com/untyped/unlib.git
+scm = git
 
 [planetdev/mirrors]
 path = planetdev/mirrors
-repository = http://svn.untyped.com/mirrors/trunk/src
-scm = svn
+repository = git://github.com/untyped/mirrors.git
+scm = git
